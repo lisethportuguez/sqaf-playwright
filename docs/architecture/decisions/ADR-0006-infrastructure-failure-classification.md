@@ -38,6 +38,8 @@ Los fragmentos (`One moment`, `Please wait`) y los títulos que solo *contienen*
 
 Lo invocarán las fixtures de navegación a partir de la Etapa 2. El test **falla** con una causa explícita en lugar de un timeout genérico.
 
+> **Actualización E2:** el guard no lo invoca una fixture, sino `BasePage.waitUntilReady()` (después del evento `load` y antes de `assertReady()`), de modo que cubre tanto `open()` como las navegaciones por clic. Las fixtures solo crean los Page Objects. Validado con un desafío simulado mediante `page.route()` ([ADR-0007](ADR-0007-page-objects-fixtures.md), [E2-page-objects-fixtures.md](../../validation/E2-page-objects-fixtures.md)).
+
 ### 3. Clasificación posterior (`src/errors/failure-classification.ts` y `src/reporting/failure-classification-reporter.ts`)
 
 Un reporter de Playwright examina cada intento fallido (mensajes de error y, si existe, el snapshot `error-context`) y lo clasifica como `infrastructure/anti-bot-challenge` o `unclassified`. Así se clasifican también los fallos de la **línea base, sin modificar su código**.

@@ -2,7 +2,7 @@
 
 - **Estado:** Aceptado
 - **Fecha:** 2026-11-15
-- **Etapa:** E1
+- **Etapa:** E1 (actualizado en E2: política de localizadores)
 
 ## Contexto
 
@@ -19,6 +19,7 @@ Al cierre de la Etapa 0, `playwright.config.ts` contenía directamente la URL de
 | `timeouts.ts` | Timeouts de SQAF y de la línea base |
 | `evidence.ts` | Política de trace, screenshot y video de SQAF y de la línea base |
 | `anti-bot.ts` | Firmas del desafío anti-bot del SUT (ver ADR-0006) |
+| `locators.ts` | (E2) Política de localizadores de SQAF: `testIdAttribute: 'data-qa'` (ver ADR-0007) |
 | `index.ts` | Punto único de importación: `sqafConfig`, resuelto una vez, validado e inmutable (`Object.freeze`) |
 
 `playwright.config.ts` solo consume `sqafConfig`: ya no contiene valores escritos directamente.
@@ -89,6 +90,12 @@ En E0, el límite de 1 worker en local lo aportaba el comando (`--workers=1`). E
 2. Los **valores declarados** de `expect.timeout` y `workers` del proyecto, que Playwright no expone en el proyecto resuelto, y la ausencia de opciones globales que pudieran sobrescribirlos.
 
 Una mutación controlada (trace `on-first-retry` y `expect` de 10 s en la línea base) hizo fallar 5 pruebas de contrato.
+
+### 7. Actualización E2: política de localizadores
+
+- `config/locators.ts` define `SQAF_LOCATORS = { testIdAttribute: 'data-qa' }` (inmutable), expuesto como `sqafConfig.locators`.
+- `playwright.config.ts` lo aplica **solo** en `sqafUse`, es decir, en los proyectos `integration`, `chromium`, `firefox` y `webkit`. El proyecto `baseline` **no** lo recibe: la prueba de contrato de la línea base sigue exigiendo exactamente su `use` de E0, y `tests/unit/config/sqaf-projects-contract.spec.ts` comprueba que `baseline` no tiene `testIdAttribute`.
+- Las demás decisiones de E1 (entornos, variables, timeouts, evidencias, retries y workers) no cambian. El proyecto `integration` hereda los retries globales de E1 (CI 2, local 0) y no declara workers propios.
 
 ## Alternativas descartadas
 

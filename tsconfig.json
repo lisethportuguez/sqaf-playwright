@@ -13,7 +13,10 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": false
+    "skipLibCheck": false,
+    "paths": {
+      "@sqaf/*": ["./src/*"]
+    }
   },
   "include": ["playwright.config.ts", "config/**/*.ts", "src/**/*.ts", "baseline/**/*.ts", "tests/**/*.ts"]
 }

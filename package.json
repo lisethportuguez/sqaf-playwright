@@ -22,6 +22,7 @@
     "test": "playwright test",
     "test:unit": "playwright test --project=unit",
     "test:baseline": "playwright test --project=baseline",
+    "test:integration": "playwright test --project=integration",
     "report": "playwright show-report"
   },
   "devDependencies": {
