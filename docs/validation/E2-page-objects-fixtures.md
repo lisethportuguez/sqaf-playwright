@@ -155,7 +155,26 @@ No hubo desafío anti-bot en ninguna ejecución local de E2.
 
 ## 9. Integración continua
 
-> Sección pendiente: se completará con el run de CI del Pull Request de E2.
+**Run [`43755588344`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43755588344)** (evento `pull_request` del PR [#5](https://github.com/lisethportuguez/sqaf-playwright/pull/5), commit `801bf20`), job `Typecheck, unit, baseline and integration (Chromium)`: **success**.
+
+| Paso | Resultado |
+|---|---|
+| Typecheck | success |
+| Unit tests (framework) | **82 passed** (8.5 s, 1 worker) |
+| Install Chromium | success (solo Chromium) |
+| Run baseline | **5 passed** (10.4 s, 1 worker, retries 0) |
+| Upload HTML report | `playwright-report-43755588344-1` (224 486 bytes) |
+| Upload failure evidence | skipped (sin fallos) |
+| Integration tests (Page Objects and fixtures) | **20 passed**, 0 flaky (23.2 s, 1 worker) |
+| Upload integration HTML report | `integration-report-43755588344-1` (239 028 bytes) |
+| Upload integration failure evidence | skipped (sin fallos) |
+
+- El reporter de clasificación informó "no failed attempts" en las tres ejecuciones (unitarias, línea base e integración).
+- No hubo desafío anti-bot.
+- El orden real de los pasos coincide con el fijado por `workflow-steps.spec.ts`.
+- El contenido de `GITHUB_STEP_SUMMARY` (encabezados por paso) no se puede leer por la API. Su revisión visual en la pestaña *Actions* del run queda pendiente para la responsable.
+- Los artifacts `failure-evidence-*` e `integration-failure-evidence-*` no se han generado todavía porque no ha habido fallos.
+- El commit que añade esta sección solo modifica documentación. Como en `pull_request` GitHub evalúa el diff completo del PR, se espera que dispare otro run de CI del PR.
 
 ## 10. Desviaciones respecto al plan
 
@@ -188,19 +207,19 @@ No hubo desafío anti-bot en ninguna ejecución local de E2.
 
 | # | Criterio | Estado | Evidencia |
 |---|---|---|---|
-| 1 | Typecheck con exit 0 | Cumplido (local) | §6.1; CI pendiente (§9) |
-| 2 | Las 66 pruebas unitarias existentes siguen pasando | Cumplido (local) | §6.2 (82 passed) |
-| 3 | La nueva prueba de arquitectura pasa | Cumplido (local) | §6.2; mutaciones M6 y M7 |
+| 1 | Typecheck con exit 0 | Cumplido | §6.1 (local); §9 (CI) |
+| 2 | Las 66 pruebas unitarias existentes siguen pasando | Cumplido | §6.2 y §9 (82 passed en local y en CI) |
+| 3 | La nueva prueba de arquitectura pasa | Cumplido | §6.2 y §9; mutaciones M6 y M7 |
 | 4 | Fixtures funcionales y tipadas | Cumplido (local) | §6.3 `fixtures.spec.ts`; typecheck |
 | 5 | Páginas y componentes implementados | Cumplido | `src/pages/` (1 base, 3 componentes, 8 páginas) |
 | 6 | Reutilización de `HeaderComponent` y `ProductCard` | Cumplido (local) | §6.3 `products.spec.ts` |
 | 7 | Guard anti-bot con simulación | Cumplido (local) | §6.3 `anti-bot.spec.ts`; M2 y M3 |
-| 8 | Las pruebas de integración pasan | Cumplido (local) | §6.3 (20 passed); CI pendiente |
+| 8 | Las pruebas de integración pasan | Cumplido | §6.3 (20 passed en local); §9 (20 passed en CI) |
 | 9 | `integration` usa `sqafUse` | Cumplido | Contrato `sqaf-projects-contract.spec.ts`; M9 |
 | 10 | La línea base conserva exactamente su configuración | Cumplido | Contrato de E1 sin cambios y en verde; M8 |
 | 11 | Los cuatro archivos protegidos conservan su SHA-256 | Cumplido | §2.2 |
 | 12 | Tres corridas locales de E0 con 5/5 | Cumplido | §8 |
-| 13 | CI ejecuta typecheck, unitarias, línea base e integración | Pendiente | §9 |
+| 13 | CI ejecuta typecheck, unitarias, línea base e integración | Cumplido | §9 (run `43755588344`) |
 | 14 | Sin dependencias nuevas ni cambios de versión | Cumplido | §2.2 (`package-lock.json` sin cambios) |
 | 15 | Documentación y ADR actualizados | Cumplido | ADR-0007 (nuevo); ADR-0003, ADR-0004 y ADR-0005; `architecture.md`; README; este documento |
-| 16 | PR de E2 abierto con checks en verde | Pendiente | §9 |
+| 16 | PR de E2 abierto con checks en verde | Cumplido para `801bf20` (pendiente de confirmar el run del commit de documentación) | §9; PR [#5](https://github.com/lisethportuguez/sqaf-playwright/pull/5) |

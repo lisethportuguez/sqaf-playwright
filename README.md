@@ -190,11 +190,11 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 | 1 | Anti-bot challenge detection and infrastructure failure classification | Validated by unit tests in CI run [43693825486](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43693825486), using the signatures and messages observed in CI; not yet exercised against a live challenge |
 | 1 | CI unit-test step and path filters | Validated (CI run [43693825486](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43693825486); path filters checked with real events) |
 | 1 | CI failure-evidence artifact | Implemented (not yet exercised: no CI failure since Stage 1) |
-| 2 | Page Object layer (`BasePage`, Header, ProductCard, CartModal, 8 pages) | Validated locally (integration tests); CI: see [E2-page-objects-fixtures.md](docs/validation/E2-page-objects-fixtures.md) |
-| 2 | Fixtures layer (automatic ad blocking, one fixture per Page Object, `@sqaf/fixtures`) | Validated locally (integration tests); CI: see [E2-page-objects-fixtures.md](docs/validation/E2-page-objects-fixtures.md) |
+| 2 | Page Object layer (`BasePage`, Header, ProductCard, CartModal, 8 pages) | Validated (local and CI run [43755588344](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43755588344), integration tests) |
+| 2 | Fixtures layer (automatic ad blocking, one fixture per Page Object, `@sqaf/fixtures`) | Validated (local and CI run [43755588344](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43755588344), integration tests) |
 | 2 | Anti-bot guard wired into page navigation | Validated with a simulated challenge (offline); not yet exercised against a live challenge |
 | 2 | Layer dependency rule check | Validated (unit test with controlled mutations) |
-| 2 | CI integration step with separate artifacts | Implemented; CI: see [E2-page-objects-fixtures.md](docs/validation/E2-page-objects-fixtures.md) |
+| 2 | CI integration step with separate artifacts | Validated (CI run [43755588344](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43755588344)); integration failure-evidence artifact not yet exercised |
 | 3 | Test Data Management (JSON, typed data, API user provisioning) | Planned |
 | 4 | Test layer — 15 functional scenarios, tags, traceability | Planned |
 | 5 | Common utilities and error handling | Planned |
