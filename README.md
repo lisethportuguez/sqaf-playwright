@@ -9,7 +9,7 @@ A multi-layer functional test automation framework built with **Playwright** and
 
 SQAF is developed as the practical component of an undergraduate thesis (TFG) in Software Quality Management Engineering, and as a professional portfolio project.
 
-> **Project status: Stage 1 — Configuration and framework foundation — _Implemented_ (pending review, PR into `main`).** Stage 0 is closed and tagged `v0.1.0`.
+> **Project status: Stage 1 — Configuration and framework foundation — _Validated in CI_ (pending review, PR into `main`).** Stage 0 is closed and tagged `v0.1.0`.
 > Stage 0 evidence (local runs and GitHub Actions runs) is recorded in [E0-baseline-runs.md](docs/validation/E0-baseline-runs.md); Stage 1 evidence in [E1-configuration.md](docs/validation/E1-configuration.md).
 > Stage 1 adds the centralized configuration layer and the detection and classification of the SUT's anti-bot challenge. Page Objects, fixtures, test data and the SQAF test suites are **not implemented yet**. See [Roadmap](#roadmap).
 
@@ -156,9 +156,10 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 | 0 | Experimental baseline — 5 scenarios (TC1, TC3, TC8, TC9, TC12) | Validated (local, 3 runs) |
 | 0 | Ad-blocking policy for the SUT | Validated (local) |
 | 0 | GitHub Actions CI workflow | Validated (run [43689246937](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43689246937)) |
-| 1 | Configuration layer (environments, variables, timeouts, evidence policy, frozen baseline) | Implemented (pending CI validation) |
-| 1 | Anti-bot challenge detection and infrastructure failure classification | Implemented (pending CI validation) |
-| 1 | CI path filters, unit tests and failure evidence | Implemented (pending CI validation) |
+| 1 | Configuration layer (environments, variables, timeouts, evidence policy, frozen baseline) | Validated (CI run [43693825486](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43693825486)) |
+| 1 | Anti-bot challenge detection and infrastructure failure classification | Validated by unit tests in CI run [43693825486](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43693825486), using the signatures and messages observed in CI; not yet exercised against a live challenge |
+| 1 | CI unit-test step and path filters | Validated (CI run [43693825486](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43693825486); path filters checked with real events) |
+| 1 | CI failure-evidence artifact | Implemented (not yet exercised: no CI failure since Stage 1) |
 | 2 | Page Object layer and fixtures | Planned |
 | 3 | Test Data Management (JSON, typed data, API user provisioning) | Planned |
 | 4 | Test layer — 15 functional scenarios, tags, traceability | Planned |

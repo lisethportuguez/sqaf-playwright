@@ -92,7 +92,42 @@ Tres corridas locales con el mismo comando y las mismas condiciones que E0. **No
 
 ## 5. Verificación en GitHub Actions
 
-*Pendiente: se completa después de publicar la rama.*
+### 5.1 Pipeline del PR #2
+
+| Dato | Valor |
+|---|---|
+| Run | [`43693825486`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43693825486) (intento 1), workflow [`CI`](https://github.com/lisethportuguez/sqaf-playwright/actions/workflows/ci.yml) |
+| Evento | `pull_request` (PR #2, `stage/1-configuration` → `main`) |
+| Commit | `7f3b4bf` |
+| Job (UTC) | 2026-11-15, 08:17:48–08:18:50 (62 s) |
+| Entorno | `ubuntu-latest` (imagen `ubuntu-26.04`), Node.js v26.13.1 |
+
+| Paso | Resultado |
+|---|---|
+| `npm ci` | Aprobado |
+| Typecheck | Aprobado (exit 0) |
+| Pruebas unitarias | **66 passed (6.3 s)**, 1 worker |
+| Instalación de Chromium | Aprobado |
+| Línea base | **5 passed (14.4 s)**, Chromium, 1 worker |
+| Reporte HTML | Artifact `playwright-report-43693825486-1` (223 052 bytes) |
+| Evidencias de fallo | Omitido (`skipped`): no hubo fallos |
+| Clasificación | Consola: `[SQAF] Failure classification: no failed attempts.` tras las pruebas unitarias y tras la línea base |
+
+- El resumen del job (`GITHUB_STEP_SUMMARY`) no se puede consultar por la API de GitHub. Su escritura está cubierta por las pruebas unitarias (ejecución hija con `GITHUB_STEP_SUMMARY` apuntando a un archivo); la comprobación visual en la pestaña *Actions* queda a cargo de la revisión.
+- El artifact `failure-evidence-*` no se generó porque no hubo fallos. Su configuración se verificará con el primer fallo real.
+
+### 5.2 Filtros de rutas con eventos reales
+
+Se abrieron dos PR temporales en borrador contra `stage/1-configuration`, cada uno con un único archivo nuevo. Ambos se cerraron sin merge y sus ramas temporales se eliminaron.
+
+| PR | Rama (commit) | Archivo modificado | Esperado | Observado |
+|---|---|---|---|---|
+| #3 | `tmp/ci-filter-docs-only` (`1450e07`) | `docs/tmp-ci-filter-check.md` | Sin run | **Sin run** (comprobado ~1 min después de crear el PR; `pull_request` se dispara en segundos, como muestra el PR #4) |
+| #4 | `tmp/ci-filter-critical-md` (`d8013f7`) | `config/tmp-ci-filter-check.md` | Run (reinclusión de `config/**`) | **Run [`43693988709`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43693988709) creado de inmediato**, cancelado durante "Set up Node.js": no se ejecutaron el typecheck ni la línea base, así que no se contactó el SUT |
+
+- El caso positivo general (cambios de código) lo demuestra el run `43693825486` del PR #2.
+- `push` a `main` usa la misma lista que `pull_request` (verificado por `tests/unit/ci/workflow-paths.spec.ts`). Su comportamiento con eventos reales se observará en el merge, que incluye código y por lo tanto debe disparar CI.
+- La ejecución manual (`workflow_dispatch`) no tiene filtro (verificado por la prueba unitaria) y no se lanzó para no contactar el SUT sin necesidad.
 
 ## 6. Desviaciones respecto del plan aprobado
 
@@ -120,7 +155,8 @@ Tres corridas locales con el mismo comando y las mismas condiciones que E0. **No
 | 6 | La línea base conserva las condiciones de E0 (contrato) y pasa 3 corridas locales | Cumplido (contrato y 3 × 5/5) |
 | 7 | El detector reconoce las firmas reales y no da falsos positivos | Cumplido (pruebas unitarias) |
 | 8 | Un fallo por desafío se clasifica como infraestructura y sigue contando como fallo | Cumplido (pruebas unitarias con ejecución real de Playwright) |
-| 9 | CI ejecuta typecheck, pruebas unitarias y línea base, y publica los artifacts | Pendiente (sección 5) |
+| 9 | CI ejecuta typecheck, pruebas unitarias y línea base, y publica los artifacts | Cumplido (run `43693825486`; reporte HTML publicado; `failure-evidence-*` pendiente de un fallo real) |
 | 10 | Sin dependencias nuevas ni cambios de versión; `package-lock.json` sin cambios | Cumplido |
 | 11 | ADR-0005, ADR-0006, ADR-0003, `architecture.md`, README y este registro actualizados | Cumplido |
-| 12 | PR validado en CI; merge y tag solo con autorización | Pendiente |
+| 12 | PR validado en CI; merge y tag solo con autorización | PR validado en CI. Merge y tag pendientes de autorización |
+| 13 | Filtros de CI: cambios solo documentales no ejecutan CI; las rutas críticas siempre lo ejecutan; ejecución manual disponible | Cumplido (pruebas unitarias y eventos reales, sección 5.2) |
