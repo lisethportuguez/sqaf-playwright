@@ -1,0 +1,58 @@
+/**
+ * SQAF — Configuration layer entry point (Stage 1).
+ *
+ * Single import for every configuration value. Resolved once, validated and
+ * frozen. See docs/architecture/architecture.md and ADR-0005.
+ */
+import { BASELINE_EVIDENCE, sqafEvidencePolicy, type EvidencePolicy } from './evidence';
+import { loadEnvFileIfPresent, resolveEnvironment, type ResolvedEnvironment } from './environment';
+import { ENVIRONMENTS } from './environments';
+import { BASELINE_TIMEOUTS, SQAF_TIMEOUTS, type TimeoutPolicy } from './timeouts';
+
+export interface BaselineConditions {
+  /** Always the production SUT: SQAF_ENV and SQAF_BASE_URL never apply. */
+  readonly baseURL: string;
+  readonly retries: 0;
+  readonly workers: 1;
+  readonly timeouts: TimeoutPolicy;
+  readonly evidence: EvidencePolicy;
+}
+
+export interface SqafConfig {
+  readonly environment: ResolvedEnvironment;
+  readonly isCI: boolean;
+  readonly timeouts: TimeoutPolicy;
+  readonly evidence: EvidencePolicy;
+  /** Frozen Stage 0 conditions of the experimental baseline. */
+  readonly baseline: BaselineConditions;
+  readonly reporting: {
+    readonly classificationOutputFile: string;
+  };
+}
+
+export function buildSqafConfig(environment: ResolvedEnvironment): SqafConfig {
+  return Object.freeze({
+    environment,
+    isCI: environment.isCI,
+    timeouts: SQAF_TIMEOUTS,
+    evidence: sqafEvidencePolicy(environment.isCI),
+    baseline: Object.freeze({
+      baseURL: ENVIRONMENTS.production.baseURL,
+      retries: 0,
+      workers: 1,
+      timeouts: BASELINE_TIMEOUTS,
+      evidence: BASELINE_EVIDENCE,
+    }),
+    reporting: Object.freeze({
+      classificationOutputFile: 'reports/failure-classification.json',
+    }),
+  });
+}
+
+loadEnvFileIfPresent();
+
+export const sqafConfig: SqafConfig = buildSqafConfig(resolveEnvironment());
+
+export { ConfigurationError } from './environment';
+export type { EvidencePolicy } from './evidence';
+export type { TimeoutPolicy } from './timeouts';

@@ -1,9 +1,45 @@
 name: CI
 
+# Path filters (ADR-0003, Stage 1): a change that touches ONLY documentation
+# (docs/** or Markdown files) does not run the workflow, so the external SUT is
+# not hit without need. `paths` is used instead of `paths-ignore` because only
+# `paths` can re-include: code, configuration, tests, workflows and dependency
+# manifests always trigger CI, even if they are Markdown files. Any file not
+# excluded (e.g. .gitignore, LICENSE, metrics JSON) also triggers it.
+# The two lists must stay identical. Manual runs (workflow_dispatch) are never
+# filtered and always execute the full pipeline, baseline included.
 on:
   push:
     branches: [main]
+    paths:
+      - '**'
+      - '!docs/**'
+      - '!**.md'
+      - '.github/workflows/**'
+      - 'config/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'baseline/**'
+      - 'playwright.config.ts'
+      - 'tsconfig.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.nvmrc'
   pull_request:
+    paths:
+      - '**'
+      - '!docs/**'
+      - '!**.md'
+      - '.github/workflows/**'
+      - 'config/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'baseline/**'
+      - 'playwright.config.ts'
+      - 'tsconfig.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.nvmrc'
   workflow_dispatch:
 
 # Least privilege: the workflow only needs to read the repository.
@@ -36,6 +72,10 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # Framework unit tests: no browser, no SUT. Includes the baseline contract.
+      - name: Unit tests (framework)
+        run: npm run test:unit
+
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
@@ -51,3 +91,15 @@ jobs:
           path: playwright-report/
           retention-days: 14
           if-no-files-found: error
+
+      # Failure evidence (Stage 1): test outputs and the failure classification.
+      - name: Upload failure evidence
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-results/
+            reports/
+          retention-days: 14
+          if-no-files-found: ignore

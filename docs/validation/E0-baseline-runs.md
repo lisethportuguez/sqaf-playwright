@@ -137,6 +137,8 @@ Ambos artifacts tienen retención hasta el 2026-11-29.
 
 **Causa probable (no confirmada):** el desafío se aplicó a la IP del runner de GitHub. Pudo influir la frecuencia de ejecuciones: era el cuarto run en unos 20 minutos.
 
+**Recurrencia:** el desafío se repitió en el run `43691579360` (commit `66be969`, que registró este incidente), que no se relanzó. Se documenta en [E1-configuration.md](E1-configuration.md#1-antecedente-incidentes-del-desafío-anti-bot-de-cloudflare).
+
 > **Nota metodológica:** este incidente no es una ejecución experimental adicional. No se incorpora a `metrics/experiments/E0-baseline/` ni modifica `summary.json`. Se registra como evidencia de un riesgo de infraestructura del SUT, que se abordará en la Etapa 1 (detección y clasificación de desafíos anti-bot).
 
 ## Estado de la Etapa 0

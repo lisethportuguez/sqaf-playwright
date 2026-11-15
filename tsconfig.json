@@ -15,5 +15,5 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": false
   },
-  "include": ["playwright.config.ts", "config/**/*.ts", "baseline/**/*.ts", "tests/**/*.ts"]
+  "include": ["playwright.config.ts", "config/**/*.ts", "src/**/*.ts", "baseline/**/*.ts", "tests/**/*.ts"]
 }

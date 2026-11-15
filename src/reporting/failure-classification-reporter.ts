@@ -1,0 +1,185 @@
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, relative, resolve } from 'node:path';
+import type {
+  FullConfig,
+  FullResult,
+  Reporter,
+  TestCase,
+  TestResult,
+} from '@playwright/test/reporter';
+import { classifyFailure, type FailureClassification } from '../errors/failure-classification';
+import { stripAnsi } from '../utils/anti-bot-detector';
+
+/**
+ * SQAF — Failure classification reporter (Stage 1). See ADR-0006.
+ *
+ * Observes every failed attempt and classifies it (Stage 1: anti-bot challenge
+ * or unclassified). The classification is written to the console, to a JSON
+ * file and, in GitHub Actions, to the job summary.
+ *
+ * It is strictly an OBSERVER: it never changes a test status, the number of
+ * retries or the exit code. `onEnd` returns nothing on purpose, because a
+ * returned status would override the run result.
+ */
+
+export interface FailureClassificationReporterOptions {
+  /** Output JSON file, relative to the working directory. */
+  readonly outputFile?: string;
+}
+
+export interface ClassifiedAttempt {
+  readonly test: string;
+  readonly project: string;
+  readonly file: string;
+  readonly line: number;
+  readonly retry: number;
+  readonly status: TestResult['status'];
+  readonly classification: FailureClassification;
+  readonly evidence: readonly string[];
+  readonly errorExcerpt: string;
+}
+
+export interface FailureClassificationReport {
+  readonly schemaVersion: 1;
+  readonly generatedAt: string;
+  readonly runStatus: FullResult['status'];
+  readonly projects: readonly string[];
+  readonly note: string;
+  readonly totals: {
+    readonly failedAttempts: number;
+    readonly byClassification: Readonly<Record<FailureClassification, number>>;
+  };
+  readonly failures: readonly ClassifiedAttempt[];
+}
+
+const DEFAULT_OUTPUT = 'reports/failure-classification.json';
+const EXCERPT_LENGTH = 400;
+const NOTE = 'Informational classification. Test statuses, retries and the exit code are not modified.';
+
+function readErrorContext(result: TestResult): string | undefined {
+  const attachment = result.attachments.find((item) => item.name === 'error-context');
+  if (!attachment) return undefined;
+  if (attachment.body) return attachment.body.toString('utf8');
+  if (attachment.path && existsSync(attachment.path)) {
+    try {
+      return readFileSync(attachment.path, 'utf8');
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
+function toPosix(path: string): string {
+  return path.replaceAll('\\', '/');
+}
+
+export function renderStepSummary(report: FailureClassificationReport): string {
+  const lines = [
+    `### SQAF failure classification (${report.projects.join(', ') || 'no projects'})`,
+    '',
+  ];
+  if (report.failures.length === 0) {
+    lines.push('No failed attempts.', '');
+    return lines.join('\n');
+  }
+  lines.push(
+    '| Classification | Failed attempts |',
+    '|---|---|',
+    ...Object.entries(report.totals.byClassification).map(([name, count]) => `| \`${name}\` | ${count} |`),
+    '',
+    '| Test | Project | Retry | Status | Classification | Evidence |',
+    '|---|---|---|---|---|---|',
+    ...report.failures.map(
+      (failure) =>
+        `| ${failure.test.replaceAll('|', '\\|')} | ${failure.project} | ${failure.retry} | ${failure.status} | \`${failure.classification}\` | ${failure.evidence.join('; ').replaceAll('|', '\\|') || '—'} |`,
+    ),
+    '',
+    `> ${report.note}`,
+    '',
+  );
+  return lines.join('\n');
+}
+
+export default class FailureClassificationReporter implements Reporter {
+  private readonly outputFile: string;
+  private rootDir = process.cwd();
+  private projects: string[] = [];
+  private readonly failures: ClassifiedAttempt[] = [];
+
+  constructor(options: FailureClassificationReporterOptions = {}) {
+    this.outputFile = resolve(options.outputFile ?? DEFAULT_OUTPUT);
+  }
+
+  printsToStdio(): boolean {
+    return false;
+  }
+
+  onBegin(config: FullConfig): void {
+    this.rootDir = config.rootDir;
+    this.projects = config.projects.map((project) => project.name);
+  }
+
+  onTestEnd(test: TestCase, result: TestResult): void {
+    if (result.status === 'passed' || result.status === 'skipped') return;
+
+    const messages = result.errors.map((error) => stripAnsi(error.message ?? error.value ?? ''));
+    const context = readErrorContext(result);
+    const { classification, evidence } = classifyFailure({
+      errorMessages: messages,
+      ...(context !== undefined ? { pageSnapshot: context } : {}),
+    });
+
+    this.failures.push({
+      test: test.titlePath().filter(Boolean).slice(1).join(' › '),
+      project: test.parent.project()?.name ?? '',
+      file: toPosix(relative(this.rootDir, test.location.file)),
+      line: test.location.line,
+      retry: result.retry,
+      status: result.status,
+      classification,
+      evidence,
+      errorExcerpt: (messages[0] ?? '').slice(0, EXCERPT_LENGTH),
+    });
+  }
+
+  onEnd(result: FullResult): void {
+    const byClassification: Record<FailureClassification, number> = {
+      'infrastructure/anti-bot-challenge': 0,
+      unclassified: 0,
+    };
+    for (const failure of this.failures) byClassification[failure.classification] += 1;
+
+    const report: FailureClassificationReport = {
+      schemaVersion: 1,
+      generatedAt: new Date().toISOString(),
+      runStatus: result.status,
+      projects: this.projects,
+      note: NOTE,
+      totals: { failedAttempts: this.failures.length, byClassification },
+      failures: this.failures,
+    };
+
+    mkdirSync(dirname(this.outputFile), { recursive: true });
+    writeFileSync(this.outputFile, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+
+    const where = toPosix(relative(process.cwd(), this.outputFile));
+    if (this.failures.length === 0) {
+      console.log(`[SQAF] Failure classification: no failed attempts. Report: ${where}`);
+    } else {
+      const parts = Object.entries(byClassification).map(([name, count]) => `${count} ${name}`);
+      console.log(
+        `[SQAF] Failure classification: ${this.failures.length} failed attempt(s) — ${parts.join(', ')}. Report: ${where}`,
+      );
+      for (const failure of this.failures) {
+        if (failure.classification !== 'unclassified') {
+          console.log(`[SQAF]   ${failure.classification}: ${failure.test} (retry ${failure.retry})`);
+        }
+      }
+      console.log(`[SQAF] ${NOTE}`);
+    }
+
+    const summaryFile = process.env['GITHUB_STEP_SUMMARY'];
+    if (summaryFile) appendFileSync(summaryFile, `${renderStepSummary(report)}\n`, 'utf8');
+  }
+}
