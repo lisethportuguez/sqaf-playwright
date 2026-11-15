@@ -1,8 +1,8 @@
 # ADR-0003: Integración continua con GitHub Actions desde la Etapa 0
 
-- **Estado:** Aceptado. Validado en E0 (runs `43689246937`, `43690125007` y `43690457916`). Actualizado en E1 (filtros de rutas, pruebas unitarias y evidencias de fallo).
+- **Estado:** Aceptado. Validado en E0 (runs `43689246937`, `43690125007` y `43690457916`). Actualizado en E1 (filtros de rutas, pruebas unitarias y evidencias de fallo) y en E2 (paso de integración).
 - **Fecha:** 2026-11-15
-- **Etapa:** E0 (actualizado en E1)
+- **Etapa:** E0 (actualizado en E1 y E2)
 
 ## Contexto
 
@@ -69,6 +69,21 @@ paths:
 
 **Riesgo aceptado.** Un commit solo documental en `main` no deja un run de CI asociado; el último estado de CI de `main` sigue siendo el del último cambio de código.
 
+### Cambios de la Etapa 2
+
+| Aspecto | Decisión | Motivo |
+|---|---|---|
+| Nombre del job | `Typecheck, unit, baseline and integration (Chromium)` (antes `Typecheck and baseline (Chromium)`) | Describe el pipeline real. La rama `main` no tiene protección que dependa del nombre del check |
+| Paso de integración | `Integration tests (Page Objects and fixtures)`: `npm run test:integration -- --output=test-results-integration`, **después** de la línea base y de la subida de sus evidencias | La integración nunca influye en la ejecución ni en las evidencias de la línea base (ADR-0007) |
+| Condición | Solo se ejecuta si todos los pasos anteriores pasaron (condición por defecto) | Si la línea base falla (por ejemplo, por el desafío anti-bot), no se envían más peticiones al SUT |
+| Salidas separadas | HTML en `playwright-report-integration/` (`PLAYWRIGHT_HTML_OUTPUT_DIR`) y resultados en `test-results-integration/` | Playwright limpia su carpeta de resultados en cada ejecución: así no se mezclan con los de la línea base |
+| Artifacts | `integration-report-<run>-<intento>` (siempre que el paso se ejecute) e `integration-failure-evidence-<run>-<intento>` (si falla la integración), 14 días | Resultados identificables por separado |
+| Resumen del job | Cada paso escribe un encabezado propio (`## Baseline (Stage 0 conditions)` y `## Integration (Page Objects and fixtures)`) antes de la tabla de clasificación de fallos | El reporter de E1 lista en su encabezado todos los proyectos configurados, no solo el ejecutado. El encabezado del paso identifica cada ejecución sin modificar el reporter |
+| Navegadores | Sigue siendo solo Chromium | Firefox y WebKit no se ejecutan hasta E4 |
+| Workers y retries | Sin cambios: 1 worker en CI; retries globales de E1 (2 en CI para los proyectos SQAF, 0 en `baseline` y `unit`) | Las decisiones de E1 no se modifican |
+
+`tests/unit/ci/workflow-steps.spec.ts` fija el orden (typecheck → unitarias → línea base → integración), que las evidencias de la línea base se suban antes de la integración, las salidas separadas y que solo se instale Chromium.
+
 ### Configuración necesaria en GitHub
 
 No se necesitan *secrets* ni *variables*. Solo hay que crear el repositorio público `sqaf-playwright` y hacer push.
@@ -76,6 +91,7 @@ No se necesitan *secrets* ni *variables*. Solo hay que crear el repositorio púb
 ## Evolución prevista
 
 - E1 (hecho): artifacts de evidencias cuando hay fallos, pruebas unitarias, clasificación de fallos en `$GITHUB_STEP_SUMMARY` y filtros de rutas.
+- E2 (hecho): paso de integración de Page Objects y fixtures con artifacts propios.
 - E4: jobs filtrados por tags (smoke en PR, regression en `main`).
 - E6: reportes JSON y JUnit, historial de métricas y resumen completo en `$GITHUB_STEP_SUMMARY`.
 - E7 (opcional): ejecución programada y matriz multi-navegador.
