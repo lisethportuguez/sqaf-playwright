@@ -125,6 +125,9 @@ test('TC9 - Search Product', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Products' }).click();
   await expect(page.getByRole('heading', { name: 'All Products' })).toBeVisible();
+  // The search button is bound by jQuery once the page scripts load;
+  // clicking earlier is silently ignored (observed 3/3 failures in Stage 0).
+  await page.waitForLoadState('load');
 
   await page.locator('#search_product').fill(searchTerm);
   await page.locator('#submit_search').click();
