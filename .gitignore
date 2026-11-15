@@ -5,6 +5,8 @@ node_modules/
 # Playwright outputs (reports and evidence are generated, never versioned)
 /test-results/
 /playwright-report/
+/test-results-integration/
+/playwright-report-integration/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/

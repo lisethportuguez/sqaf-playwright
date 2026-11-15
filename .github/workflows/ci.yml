@@ -53,7 +53,7 @@ concurrency:
 
 jobs:
   baseline:
-    name: Typecheck and baseline (Chromium)
+    name: Typecheck, unit, baseline and integration (Chromium)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -81,7 +81,9 @@ jobs:
 
       # workers = 1 and retries = 0 for the baseline come from playwright.config.ts
       - name: Run baseline
-        run: npm run test:baseline
+        run: |
+          echo '## Baseline (Stage 0 conditions)' >> "$GITHUB_STEP_SUMMARY"
+          npm run test:baseline
 
       - name: Upload HTML report
         if: ${{ !cancelled() }}
@@ -100,6 +102,38 @@ jobs:
           name: failure-evidence-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             test-results/
+            reports/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      # Stage 2 (ADR-0007): Page Objects and fixtures against the SUT, AFTER the
+      # baseline so it can never influence the baseline run or its evidence.
+      # Runs only if everything before it passed (fewer requests to the SUT).
+      # Separate output folders and artifacts keep its results identifiable.
+      - name: Integration tests (Page Objects and fixtures)
+        id: integration
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-integration
+        run: |
+          echo '## Integration (Page Objects and fixtures)' >> "$GITHUB_STEP_SUMMARY"
+          npm run test:integration -- --output=test-results-integration
+
+      - name: Upload integration HTML report
+        if: ${{ !cancelled() && steps.integration.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: playwright-report-integration/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload integration failure evidence
+        if: ${{ failure() && steps.integration.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-failure-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-results-integration/
             reports/
           retention-days: 14
           if-no-files-found: ignore

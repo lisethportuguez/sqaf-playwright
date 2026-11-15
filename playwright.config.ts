@@ -7,7 +7,7 @@ import {
 import { sqafConfig } from './config';
 
 /**
- * SQAF — Playwright configuration (Stage 1).
+ * SQAF — Playwright configuration (Stages 1-2).
  *
  * Every value comes from the Configuration layer (`config/`). See
  * docs/architecture/architecture.md and ADR-0005.
@@ -16,9 +16,10 @@ import { sqafConfig } from './config';
  *  - unit      Framework unit tests (no browser, no SUT).
  *  - baseline  Experimental baseline with FROZEN Stage 0 conditions. Guarded
  *              by tests/unit/config/baseline-contract.spec.ts.
+ *  - integration  Page Objects and fixtures against the SUT (Stage 2, Chromium only).
  *  - chromium / firefox / webkit  SQAF suites (tests/e2e, from Stage 4).
  */
-const { environment, isCI, timeouts, evidence, baseline, reporting } = sqafConfig;
+const { environment, isCI, timeouts, evidence, locators, baseline, reporting } = sqafConfig;
 
 /** Shared `use` of the SQAF browser projects. */
 const sqafUse: Partial<PlaywrightTestOptions & PlaywrightWorkerOptions> = {
@@ -28,6 +29,7 @@ const sqafUse: Partial<PlaywrightTestOptions & PlaywrightWorkerOptions> = {
   trace: evidence.trace,
   screenshot: evidence.screenshot,
   video: evidence.video,
+  testIdAttribute: locators.testIdAttribute,
 };
 
 export default defineConfig({
@@ -75,6 +77,18 @@ export default defineConfig({
         screenshot: baseline.evidence.screenshot,
         video: baseline.evidence.video,
       },
+    },
+
+    /*
+     * Stage 2: integration tests of the Page Objects and fixtures (ADR-0007).
+     * Chromium only; same SQAF settings as the suites; global retries/workers.
+     */
+    {
+      name: 'integration',
+      testDir: './tests/integration',
+      timeout: timeouts.test,
+      expect: { timeout: timeouts.expect },
+      use: { ...devices['Desktop Chrome'], ...sqafUse },
     },
 
     /* SQAF suites (tests/e2e is populated from Stage 4 onwards). */

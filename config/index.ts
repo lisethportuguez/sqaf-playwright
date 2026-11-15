@@ -7,6 +7,7 @@
 import { BASELINE_EVIDENCE, sqafEvidencePolicy, type EvidencePolicy } from './evidence';
 import { loadEnvFileIfPresent, resolveEnvironment, type ResolvedEnvironment } from './environment';
 import { ENVIRONMENTS } from './environments';
+import { SQAF_LOCATORS, type LocatorPolicy } from './locators';
 import { BASELINE_TIMEOUTS, SQAF_TIMEOUTS, type TimeoutPolicy } from './timeouts';
 
 export interface BaselineConditions {
@@ -23,6 +24,8 @@ export interface SqafConfig {
   readonly isCI: boolean;
   readonly timeouts: TimeoutPolicy;
   readonly evidence: EvidencePolicy;
+  /** Locator policy of the SQAF projects (Stage 2, ADR-0007). Never applied to the baseline. */
+  readonly locators: LocatorPolicy;
   /** Frozen Stage 0 conditions of the experimental baseline. */
   readonly baseline: BaselineConditions;
   readonly reporting: {
@@ -36,6 +39,7 @@ export function buildSqafConfig(environment: ResolvedEnvironment): SqafConfig {
     isCI: environment.isCI,
     timeouts: SQAF_TIMEOUTS,
     evidence: sqafEvidencePolicy(environment.isCI),
+    locators: SQAF_LOCATORS,
     baseline: Object.freeze({
       baseURL: ENVIRONMENTS.production.baseURL,
       retries: 0,
@@ -55,4 +59,5 @@ export const sqafConfig: SqafConfig = buildSqafConfig(resolveEnvironment());
 
 export { ConfigurationError } from './environment';
 export type { EvidencePolicy } from './evidence';
+export type { LocatorPolicy } from './locators';
 export type { TimeoutPolicy } from './timeouts';
