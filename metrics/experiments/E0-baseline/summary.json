@@ -1,0 +1,487 @@
+{
+  "schemaVersion": 1,
+  "experiment": "E0-baseline",
+  "description": "Stage 0 baseline executions (5 scenarios x Chromium). Values extracted from the Playwright JSON reporter output in raw/.",
+  "runs": [
+    {
+      "id": "run-01",
+      "series": 1,
+      "seriesStatus": "invalidated (automation defect)",
+      "sourceFile": "run1.json",
+      "startTime": "2026-11-15T06:14:45.661Z",
+      "durationMs": 36356,
+      "commit": "b9d9ffa",
+      "commitBeforeHistoryRewrite": "b9ddac5",
+      "commitSource": "inferred from commit time vs. run start time (commit is not recorded in the JSON)",
+      "playwrightVersion": "1.65.0",
+      "project": "baseline",
+      "browser": "Chromium (devices[\"Desktop Chrome\"])",
+      "workers": 1,
+      "retries": 0,
+      "stats": {
+        "expected": 4,
+        "unexpected": 1,
+        "flaky": 0,
+        "skipped": 0
+      },
+      "result": "failed",
+      "failureClassification": "automation defect: TC9 clicked the jQuery-bound #submit_search before the page load event (not an SUT defect, not infrastructure)",
+      "tests": [
+        {
+          "scenario": "TC3",
+          "title": "TC3 - Login User with incorrect email and password",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 5962,
+          "error": null
+        },
+        {
+          "scenario": "TC8",
+          "title": "TC8 - Verify All Products and product detail page",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 6242,
+          "error": null
+        },
+        {
+          "scenario": "TC9",
+          "title": "TC9 - Search Product",
+          "project": "baseline",
+          "status": "unexpected",
+          "attempts": 1,
+          "durationMs": 8701,
+          "error": "Error: expect(locator).toBeVisible() failed"
+        },
+        {
+          "scenario": "TC12",
+          "title": "TC12 - Add Products in Cart",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 7691,
+          "error": null
+        },
+        {
+          "scenario": "TC1",
+          "title": "registers a new user through the UI",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 6715,
+          "error": null
+        }
+      ],
+      "sanitization": {
+        "replacements": {
+          "absolute local project path (backslash form) -> <PROJECT_ROOT>": 11,
+          "absolute local project path (forward-slash form) -> <PROJECT_ROOT>": 9,
+          "local Node.js executable path -> <NODE_EXECUTABLE>": 1
+        },
+        "sha256Original": "27cd4e78c3dfb8fbda04005018155cb828ac06d4fdeaa7a3de6732dbc87e3df3",
+        "sha256Sanitized": "d279fe556b12270ff54330b4868e62df2fc0b678322969f97059ac438b04c830"
+      }
+    },
+    {
+      "id": "run-02",
+      "series": 1,
+      "seriesStatus": "invalidated (automation defect)",
+      "sourceFile": "run2.json",
+      "startTime": "2026-11-15T06:15:23.351Z",
+      "durationMs": 29995,
+      "commit": "b9d9ffa",
+      "commitBeforeHistoryRewrite": "b9ddac5",
+      "commitSource": "inferred from commit time vs. run start time (commit is not recorded in the JSON)",
+      "playwrightVersion": "1.65.0",
+      "project": "baseline",
+      "browser": "Chromium (devices[\"Desktop Chrome\"])",
+      "workers": 1,
+      "retries": 0,
+      "stats": {
+        "expected": 4,
+        "unexpected": 1,
+        "flaky": 0,
+        "skipped": 0
+      },
+      "result": "failed",
+      "failureClassification": "automation defect: TC9 clicked the jQuery-bound #submit_search before the page load event (not an SUT defect, not infrastructure)",
+      "tests": [
+        {
+          "scenario": "TC3",
+          "title": "TC3 - Login User with incorrect email and password",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 3480,
+          "error": null
+        },
+        {
+          "scenario": "TC8",
+          "title": "TC8 - Verify All Products and product detail page",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 4081,
+          "error": null
+        },
+        {
+          "scenario": "TC9",
+          "title": "TC9 - Search Product",
+          "project": "baseline",
+          "status": "unexpected",
+          "attempts": 1,
+          "durationMs": 7913,
+          "error": "Error: expect(locator).toBeVisible() failed"
+        },
+        {
+          "scenario": "TC12",
+          "title": "TC12 - Add Products in Cart",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 5778,
+          "error": null
+        },
+        {
+          "scenario": "TC1",
+          "title": "registers a new user through the UI",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 7658,
+          "error": null
+        }
+      ],
+      "sanitization": {
+        "replacements": {
+          "absolute local project path (backslash form) -> <PROJECT_ROOT>": 11,
+          "absolute local project path (forward-slash form) -> <PROJECT_ROOT>": 9,
+          "local Node.js executable path -> <NODE_EXECUTABLE>": 1
+        },
+        "sha256Original": "f73983696cfc51e2df8dc1e47f1e714f63825c6e94c7b5e722b59e63ab96fd3d",
+        "sha256Sanitized": "c0ca1e9be229c1985a70ab3535ce6912afec74a4f04ccdc7491dba34dd2932b5"
+      }
+    },
+    {
+      "id": "run-03",
+      "series": 1,
+      "seriesStatus": "invalidated (automation defect)",
+      "sourceFile": "run3.json",
+      "startTime": "2026-11-15T06:15:54.694Z",
+      "durationMs": 33876,
+      "commit": "b9d9ffa",
+      "commitBeforeHistoryRewrite": "b9ddac5",
+      "commitSource": "inferred from commit time vs. run start time (commit is not recorded in the JSON)",
+      "playwrightVersion": "1.65.0",
+      "project": "baseline",
+      "browser": "Chromium (devices[\"Desktop Chrome\"])",
+      "workers": 1,
+      "retries": 0,
+      "stats": {
+        "expected": 4,
+        "unexpected": 1,
+        "flaky": 0,
+        "skipped": 0
+      },
+      "result": "failed",
+      "failureClassification": "automation defect: TC9 clicked the jQuery-bound #submit_search before the page load event (not an SUT defect, not infrastructure)",
+      "tests": [
+        {
+          "scenario": "TC3",
+          "title": "TC3 - Login User with incorrect email and password",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 3746,
+          "error": null
+        },
+        {
+          "scenario": "TC8",
+          "title": "TC8 - Verify All Products and product detail page",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 3052,
+          "error": null
+        },
+        {
+          "scenario": "TC9",
+          "title": "TC9 - Search Product",
+          "project": "baseline",
+          "status": "unexpected",
+          "attempts": 1,
+          "durationMs": 8016,
+          "error": "Error: expect(locator).toBeVisible() failed"
+        },
+        {
+          "scenario": "TC12",
+          "title": "TC12 - Add Products in Cart",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 9364,
+          "error": null
+        },
+        {
+          "scenario": "TC1",
+          "title": "registers a new user through the UI",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 8601,
+          "error": null
+        }
+      ],
+      "sanitization": {
+        "replacements": {
+          "absolute local project path (backslash form) -> <PROJECT_ROOT>": 11,
+          "absolute local project path (forward-slash form) -> <PROJECT_ROOT>": 9,
+          "local Node.js executable path -> <NODE_EXECUTABLE>": 1
+        },
+        "sha256Original": "98257cb325de7dc7449ed63a5631a7d7572cb07e79dd1175e56ade5e63dab377",
+        "sha256Sanitized": "20be1f65c28005c7120315174aa1f2aab3c4a3d5542f3c25752866e1ca6141fe"
+      }
+    },
+    {
+      "id": "run-04",
+      "series": 2,
+      "seriesStatus": "official",
+      "sourceFile": "final1.json",
+      "startTime": "2026-11-15T06:18:22.354Z",
+      "durationMs": 24697,
+      "commit": "86d33bb",
+      "commitBeforeHistoryRewrite": "41d3196",
+      "commitSource": "inferred from commit time vs. run start time (commit is not recorded in the JSON)",
+      "playwrightVersion": "1.65.0",
+      "project": "baseline",
+      "browser": "Chromium (devices[\"Desktop Chrome\"])",
+      "workers": 1,
+      "retries": 0,
+      "stats": {
+        "expected": 5,
+        "unexpected": 0,
+        "flaky": 0,
+        "skipped": 0
+      },
+      "result": "passed",
+      "failureClassification": null,
+      "tests": [
+        {
+          "scenario": "TC3",
+          "title": "TC3 - Login User with incorrect email and password",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 3732,
+          "error": null
+        },
+        {
+          "scenario": "TC8",
+          "title": "TC8 - Verify All Products and product detail page",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 3315,
+          "error": null
+        },
+        {
+          "scenario": "TC9",
+          "title": "TC9 - Search Product",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 4417,
+          "error": null
+        },
+        {
+          "scenario": "TC12",
+          "title": "TC12 - Add Products in Cart",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 6180,
+          "error": null
+        },
+        {
+          "scenario": "TC1",
+          "title": "registers a new user through the UI",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 6424,
+          "error": null
+        }
+      ],
+      "sanitization": {
+        "replacements": {
+          "absolute local project path (backslash form) -> <PROJECT_ROOT>": 5,
+          "absolute local project path (forward-slash form) -> <PROJECT_ROOT>": 9,
+          "local Node.js executable path -> <NODE_EXECUTABLE>": 1
+        },
+        "sha256Original": "7a0890c7601c993b14ecf2fc7922e2692bd378061a09a652a252a0617fc86b3a",
+        "sha256Sanitized": "c9e558e693dbe3fd6c1a8a5d291796c91fb83644804d0a1a408509206b641e46"
+      }
+    },
+    {
+      "id": "run-05",
+      "series": 2,
+      "seriesStatus": "official",
+      "sourceFile": "final2.json",
+      "startTime": "2026-11-15T06:18:48.431Z",
+      "durationMs": 29302,
+      "commit": "86d33bb",
+      "commitBeforeHistoryRewrite": "41d3196",
+      "commitSource": "inferred from commit time vs. run start time (commit is not recorded in the JSON)",
+      "playwrightVersion": "1.65.0",
+      "project": "baseline",
+      "browser": "Chromium (devices[\"Desktop Chrome\"])",
+      "workers": 1,
+      "retries": 0,
+      "stats": {
+        "expected": 5,
+        "unexpected": 0,
+        "flaky": 0,
+        "skipped": 0
+      },
+      "result": "passed",
+      "failureClassification": null,
+      "tests": [
+        {
+          "scenario": "TC3",
+          "title": "TC3 - Login User with incorrect email and password",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 3410,
+          "error": null
+        },
+        {
+          "scenario": "TC8",
+          "title": "TC8 - Verify All Products and product detail page",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 4396,
+          "error": null
+        },
+        {
+          "scenario": "TC9",
+          "title": "TC9 - Search Product",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 4232,
+          "error": null
+        },
+        {
+          "scenario": "TC12",
+          "title": "TC12 - Add Products in Cart",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 9351,
+          "error": null
+        },
+        {
+          "scenario": "TC1",
+          "title": "registers a new user through the UI",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 7308,
+          "error": null
+        }
+      ],
+      "sanitization": {
+        "replacements": {
+          "absolute local project path (backslash form) -> <PROJECT_ROOT>": 5,
+          "absolute local project path (forward-slash form) -> <PROJECT_ROOT>": 9,
+          "local Node.js executable path -> <NODE_EXECUTABLE>": 1
+        },
+        "sha256Original": "729548317e4424d3413893a62727b506503d790af75d00061757e0ddb1b23917",
+        "sha256Sanitized": "785e6858b17401d86979e44d0f92fc53a26e6f8514748905622b62dfc2469758"
+      }
+    },
+    {
+      "id": "run-06",
+      "series": 2,
+      "seriesStatus": "official",
+      "sourceFile": "final3.json",
+      "startTime": "2026-11-15T06:19:19.069Z",
+      "durationMs": 25089,
+      "commit": "86d33bb",
+      "commitBeforeHistoryRewrite": "41d3196",
+      "commitSource": "inferred from commit time vs. run start time (commit is not recorded in the JSON)",
+      "playwrightVersion": "1.65.0",
+      "project": "baseline",
+      "browser": "Chromium (devices[\"Desktop Chrome\"])",
+      "workers": 1,
+      "retries": 0,
+      "stats": {
+        "expected": 5,
+        "unexpected": 0,
+        "flaky": 0,
+        "skipped": 0
+      },
+      "result": "passed",
+      "failureClassification": null,
+      "tests": [
+        {
+          "scenario": "TC3",
+          "title": "TC3 - Login User with incorrect email and password",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 3896,
+          "error": null
+        },
+        {
+          "scenario": "TC8",
+          "title": "TC8 - Verify All Products and product detail page",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 3045,
+          "error": null
+        },
+        {
+          "scenario": "TC9",
+          "title": "TC9 - Search Product",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 4641,
+          "error": null
+        },
+        {
+          "scenario": "TC12",
+          "title": "TC12 - Add Products in Cart",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 6090,
+          "error": null
+        },
+        {
+          "scenario": "TC1",
+          "title": "registers a new user through the UI",
+          "project": "baseline",
+          "status": "expected",
+          "attempts": 1,
+          "durationMs": 6852,
+          "error": null
+        }
+      ],
+      "sanitization": {
+        "replacements": {
+          "absolute local project path (backslash form) -> <PROJECT_ROOT>": 5,
+          "absolute local project path (forward-slash form) -> <PROJECT_ROOT>": 9,
+          "local Node.js executable path -> <NODE_EXECUTABLE>": 1
+        },
+        "sha256Original": "cee579413f76898ebf40b291d7e971e27ac7635cb9377e6b68805f9a6f7711b5",
+        "sha256Sanitized": "8bc8f89957a68e4a592993d57ea0a841f423f45c05d9d3fb4c8f2d7047d6e954"
+      }
+    }
+  ]
+}

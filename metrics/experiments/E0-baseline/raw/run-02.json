@@ -1,0 +1,377 @@
+{
+  "config": {
+    "argv": [
+      "<NODE_EXECUTABLE>",
+      "<PROJECT_ROOT>\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--project=baseline",
+      "--workers=1",
+      "--reporter=json"
+    ],
+    "configFile": "<PROJECT_ROOT>\\playwright.config.ts",
+    "rootDir": "<PROJECT_ROOT>/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "<PROJECT_ROOT>/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "baseline",
+        "name": "baseline",
+        "testDir": "<PROJECT_ROOT>/baseline",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "<PROJECT_ROOT>/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "<PROJECT_ROOT>/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "<PROJECT_ROOT>/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "<PROJECT_ROOT>/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "<PROJECT_ROOT>/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "<PROJECT_ROOT>/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "<PROJECT_ROOT>\\test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "baseline",
+        "testDir": "<PROJECT_ROOT>\\baseline",
+        "snapshotDir": "<PROJECT_ROOT>\\baseline",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "https://automationexercise.com",
+          "trace": "on-first-retry",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.8127.18 Safari/537.36",
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "baseline"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "..\\baseline\\baseline.spec.ts",
+      "file": "../baseline/baseline.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "TC3 - Login User with incorrect email and password",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "baseline",
+              "projectName": "baseline",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3480,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-15T06:15:31.516Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d2923076b323a8336a93-471d040f85320c1f3d5a",
+          "file": "../baseline/baseline.spec.ts",
+          "line": 85,
+          "column": 1
+        },
+        {
+          "title": "TC8 - Verify All Products and product detail page",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "baseline",
+              "projectName": "baseline",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4081,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-15T06:15:35.006Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d2923076b323a8336a93-a527f08ab39daf4e98a0",
+          "file": "../baseline/baseline.spec.ts",
+          "line": 99,
+          "column": 1
+        },
+        {
+          "title": "TC9 - Search Product",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "baseline",
+              "projectName": "baseline",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 7913,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Searched Products' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('heading', { name: 'Searched Products' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Searched Products' })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Searched Products' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('heading', { name: 'Searched Products' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Searched Products' })\u001b[22m\n\n    at <PROJECT_ROOT>\\baseline\\baseline.spec.ts:132:74",
+                    "location": {
+                      "file": "<PROJECT_ROOT>\\baseline\\baseline.spec.ts",
+                      "column": 74,
+                      "line": 132
+                    },
+                    "snippet": " \u001b[90m 130 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'#submit_search'\u001b[39m)\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 131 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 132 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'heading'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'Searched Products'\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 133 |\u001b[39m   \u001b[36mconst\u001b[39m resultNames \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'.features_items .productinfo p'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 134 |\u001b[39m   \u001b[36mawait\u001b[39m expect(resultNames\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 135 |\u001b[39m   \u001b[36mfor\u001b[39m (\u001b[36mconst\u001b[39m productName \u001b[36mof\u001b[39m \u001b[36mawait\u001b[39m resultNames\u001b[33m.\u001b[39mallTextContents()) {"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "<PROJECT_ROOT>\\baseline\\baseline.spec.ts",
+                        "column": 74,
+                        "line": 132
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Searched Products' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('heading', { name: 'Searched Products' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Searched Products' })\u001b[22m\n\n\n  130 |   await page.locator('#submit_search').click();\n  131 |\n> 132 |   await expect(page.getByRole('heading', { name: 'Searched Products' })).toBeVisible();\n      |                                                                          ^\n  133 |   const resultNames = page.locator('.features_items .productinfo p');\n  134 |   await expect(resultNames.first()).toBeVisible();\n  135 |   for (const productName of await resultNames.allTextContents()) {\n    at <PROJECT_ROOT>\\baseline\\baseline.spec.ts:132:74"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-15T06:15:39.097Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "<PROJECT_ROOT>\\test-results\\baseline-TC9---Search-Product-baseline\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "<PROJECT_ROOT>\\baseline\\baseline.spec.ts",
+                    "column": 74,
+                    "line": 132
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "d2923076b323a8336a93-7f953683172335fb9241",
+          "file": "../baseline/baseline.spec.ts",
+          "line": 120,
+          "column": 1
+        },
+        {
+          "title": "TC12 - Add Products in Cart",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "baseline",
+              "projectName": "baseline",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5778,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-15T06:15:47.390Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d2923076b323a8336a93-965ca166aac3ab717823",
+          "file": "../baseline/baseline.spec.ts",
+          "line": 140,
+          "column": 1
+        }
+      ],
+      "suites": [
+        {
+          "title": "TC1 - Register User",
+          "file": "../baseline/baseline.spec.ts",
+          "line": 20,
+          "column": 6,
+          "specs": [
+            {
+              "title": "registers a new user through the UI",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "baseline",
+                  "projectName": "baseline",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7658,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-15T06:15:23.739Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d2923076b323a8336a93-b1e19202642fa59aa107",
+              "file": "../baseline/baseline.spec.ts",
+              "line": 38,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-15T06:15:23.351Z",
+    "duration": 29994.77,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
