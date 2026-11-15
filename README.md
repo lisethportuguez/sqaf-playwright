@@ -9,7 +9,8 @@ A multi-layer functional test automation framework built with **Playwright** and
 
 SQAF is developed as the practical component of an undergraduate thesis (TFG) in Software Quality Management Engineering, and as a professional portfolio project.
 
-> **Project status: Stage 0 — Bootstrap, baseline and CI.**
+> **Project status: Stage 0 — Bootstrap, baseline and CI — _Implemented_ (remote CI validation pending).**
+> Local verifications are complete; Stage 0 will be marked *Validated* only after the first successful GitHub Actions run with its HTML report artifact.
 > The SQAF layers are **not implemented yet**. This repository currently contains the project foundation and an experimental *baseline* used to evaluate the framework later. See [Roadmap](#roadmap).
 
 ---
@@ -67,6 +68,8 @@ Current structure (Stage 0):
 ├── config/
 │   └── ad-blocking.ts         # Ad-blocking policy for the SUT
 ├── docs/                      # Internal documentation (Spanish)
+├── metrics/experiments/       # Versioned execution evidence (sanitized)
+├── LICENSE
 ├── playwright.config.ts
 ├── tsconfig.json
 └── package.json
@@ -108,7 +111,7 @@ The [CI workflow](.github/workflows/ci.yml) runs on push to `main`, on pull requ
 
 ## Metrics
 
-Metric definitions and the experimental comparison (baseline vs. SQAF) are planned for Stages 6–7. Stage 0 run records: [E0-baseline-runs.md](docs/validation/E0-baseline-runs.md).
+Metric definitions and the experimental comparison (baseline vs. SQAF) are planned for Stages 6–7. Stage 0 run records: [E0-baseline-runs.md](docs/validation/E0-baseline-runs.md). Raw (sanitized) evidence of the six Stage 0 baseline executions, including the failed ones: [metrics/experiments/E0-baseline](metrics/experiments/E0-baseline/).
 
 ## Roadmap
 
@@ -140,3 +143,8 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 - [Architecture](docs/architecture/architecture.md)
 - [Architecture Decision Records](docs/architecture/decisions/)
 - [Stage 0 validation records](docs/validation/E0-baseline-runs.md)
+- [Stage 0 baseline evidence](metrics/experiments/E0-baseline/)
+
+## License
+
+Released under the [MIT License](LICENSE). © 2026 Liseth Portuguez.
