@@ -107,6 +107,38 @@ Avisos de la plataforma, presentes en las tres ejecuciones y sin efecto en el re
 
 > Estas ejecuciones verifican que el pipeline funciona, pero no permiten sacar conclusiones de estabilidad ni de rendimiento: esas corresponden a la Etapa 7. Las duraciones tampoco son comparables con las locales, porque el entorno es distinto.
 
+## Incidente de infraestructura: desafío anti-bot de Cloudflare
+
+| Dato | Valor |
+|---|---|
+| Run | [`43690859628`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43690859628) (workflow [`CI`](https://github.com/lisethportuguez/sqaf-playwright/actions/workflows/ci.yml)) |
+| Evento / rama | `push` a `main` |
+| Commit evaluado | `dc0bf7b` (registro de R1–R3 en este documento; solo cambió este archivo respecto de `a2ea574`) |
+| Fecha | 2026-11-15 (horas en UTC) |
+
+| Intento | Job (UTC) | TypeScript | Línea base | Artifact HTML |
+|---|---|---|---|---|
+| 1 | 07:38:44–07:39:58 | Aprobado (exit 0) | **5 failed**: 0 passed, 1 worker, Chromium | `playwright-report-43690859628-1` (215 492 bytes) |
+| 2 (reejecución solo del job fallido) | 07:43:42–07:44:18 | Aprobado (exit 0) | **5 passed (10.5 s)**, 1 worker, Chromium | `playwright-report-43690859628-2` (200 257 bytes) |
+
+Ambos artifacts tienen retención hasta el 2026-11-29.
+
+**Síntoma (intento 1):** los cinco escenarios fallaron en su primera aserción, `expect(page).toHaveTitle('Automation Exercise')`, a los 5 s de espera. El título recibido fue `"One moment, please..."` y el snapshot de la página (`error-context` del reporte) solo contenía el texto `Please wait while your request is being verified...`. Esa es la página de verificación anti-bot de Cloudflare: el SUT responde con la cabecera `server: cloudflare`.
+
+**Clasificación:** fallo de **infraestructura externa**. No es un defecto funcional del SUT ni un fallo de automatización. Evidencia:
+
+- Entre `a2ea574` (R3, exitoso) y `dc0bf7b` solo cambió este documento; no cambió código, configuración ni dependencias.
+- Los cinco escenarios fallaron en el mismo punto, antes de interactuar con la aplicación.
+- En la misma franja horaria, el SUT respondía con normalidad desde la máquina local (HTTP 200 y título `Automation Exercise`).
+
+**Impacto:** impidió temporalmente ejecutar las pruebas en CI y dejó el estado de `main` en *failure* hasta la reejecución. Retrasó la creación del tag `v0.1.0`, que exigía un CI exitoso en `main`.
+
+**Resolución:** a las 07:43 UTC se reejecutó únicamente el job fallido (`gh run rerun 43690859628 --failed`), sin modificar código ni configuración. Los cinco escenarios pasaron. Con ese resultado se creó el tag `v0.1.0` sobre `dc0bf7b`.
+
+**Causa probable (no confirmada):** el desafío se aplicó a la IP del runner de GitHub. Pudo influir la frecuencia de ejecuciones: era el cuarto run en unos 20 minutos.
+
+> **Nota metodológica:** este incidente no es una ejecución experimental adicional. No se incorpora a `metrics/experiments/E0-baseline/` ni modifica `summary.json`. Se registra como evidencia de un riesgo de infraestructura del SUT, que se abordará en la Etapa 1 (detección y clasificación de desafíos anti-bot).
+
 ## Estado de la Etapa 0
 
 **Validated.** Las verificaciones locales están completas y las tres ejecuciones remotas de GitHub Actions (`43689246937`, `43690125007` y `43690457916`) fueron exitosas: instalación, typecheck, línea base en Chromium con 1 worker (5 de 5 escenarios) y reporte HTML publicado como artifact. La ejecución `43690457916` confirma el resultado en `main` después del merge del PR #1.
