@@ -1,0 +1,4 @@
+# Normalize line endings across Windows (local) and Linux (CI)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
