@@ -1,18 +1,31 @@
 {
-  "name": "tfg-sqaf",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {},
-  "keywords": [],
+  "name": "sqaf-playwright",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SQAF - Software Quality Automation Framework: a multi-layer functional test automation framework built with Playwright and TypeScript.",
+  "keywords": [
+    "playwright",
+    "typescript",
+    "test-automation",
+    "qa",
+    "page-object-model",
+    "data-driven-testing"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "playwright test",
+    "test:baseline": "playwright test --project=baseline",
+    "report": "playwright show-report"
+  },
   "devDependencies": {
     "@playwright/test": "^1.65.0",
-    "@types/node": "^26.6.6"
-  },
-  "dependencies": {
+    "@types/node": "^26.6.6",
     "typescript": "^7.0.2"
   }
 }
