@@ -11,8 +11,8 @@
     "page-object-model",
     "data-driven-testing"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Liseth Portuguez",
+  "license": "MIT",
   "type": "commonjs",
   "engines": {
     "node": ">=26"
