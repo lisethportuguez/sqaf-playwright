@@ -2,7 +2,12 @@
 
 > Datos reales, sin editar. Las conclusiones comparativas corresponden a la Etapa 7.
 
-## Condiciones de ejecución
+Este registro contiene dos tipos de ejecución:
+
+- **Seis corridas experimentales locales** (series 1 y 2). Sus evidencias crudas están en `metrics/experiments/E0-baseline/`.
+- **Una ejecución remota de verificación** en GitHub Actions. Valida el pipeline de CI y no forma parte de la serie experimental.
+
+## Condiciones de ejecución (corridas locales)
 
 | Variable | Valor |
 |---|---|
@@ -58,13 +63,49 @@
 | Limpieza de TC1 cuando falla tras crear la cuenta (fallo forzado temporal, revertido) | El `afterEach` eliminó la cuenta. `GET /api/getUserDetailByEmail` devolvió `404 Account not found`. |
 | Simulación del pipeline de CI en local (`npm ci` → `typecheck` → `CI=true npm run test:baseline`) | 5 de 5 pasaron (23.9 s) y se generó `playwright-report/index.html` |
 
-## Ejecución en GitHub Actions
+## Ejecución remota de verificación en GitHub Actions
 
-**Pendiente.** El repositorio remoto todavía no existe. No hay resultados de GitHub Actions.
+Esta ejecución es distinta de las seis corridas experimentales locales (series 1 y 2). Su objetivo es **verificar el pipeline de CI** (criterios 7, 8 y 9), no producir datos experimentales. Por eso no se agrega a `metrics/experiments/E0-baseline/` ni a `summary.json`.
+
+| Variable | Valor |
+|---|---|
+| Workflow | [`CI`](https://github.com/lisethportuguez/sqaf-playwright/actions/workflows/ci.yml) (`.github/workflows/ci.yml`) |
+| Run ID | [`43689246937`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43689246937) (intento 1) |
+| Evento | `pull_request` (PR #1, `stage/0-bootstrap` → `main`) |
+| Commit (cabeza del PR) | `89ea2b5` |
+| Fecha | 2026-11-15, job de 07:17:02 a 07:17:44 UTC (42 s) |
+| Runner | GitHub-hosted `ubuntu-latest` (imagen `ubuntu-26.04`) |
+| Node.js | v26.13.1 (resuelto desde `.nvmrc`) |
+| Navegador | Chromium (Chrome for Testing 158.0.8127.18, Playwright chromium v1254) |
+| Workers | 1 (log: `Running 5 tests using 1 worker`) |
+| Retries | 0 |
+
+| Paso del workflow | Resultado |
+|---|---|
+| `npm ci` | Aprobado |
+| Typecheck (`tsc --noEmit`) | Aprobado (exit 0) |
+| Instalación de Chromium | Aprobado |
+| Línea base (`npm run test:baseline`) | **5 passed (13.3 s)**: 0 fallidos, 0 flaky, 0 skipped |
+| Subida del reporte HTML | Aprobado: artifact `playwright-report-43689246937-1` (220 172 bytes, retención de 14 días, hasta 2026-11-29). Se descargó y se comprobó que contiene `index.html`. |
+
+| Escenario | Duración (s) |
+|---|---|
+| TC1 Register User | 3.9 |
+| TC3 Login incorrect | 1.3 |
+| TC8 All Products / detail | 1.6 |
+| TC9 Search Product | 2.0 |
+| TC12 Add Products in Cart | 2.4 |
+
+Avisos de la plataforma, sin efecto en el resultado:
+
+- `actions/upload-artifact@v4` declara Node.js 20, que está obsoleto, y GitHub lo ejecuta forzado con Node.js 24.
+- La etiqueta `ubuntu-latest` está migrando a Ubuntu 26.
+
+> Una sola ejecución remota verifica que el pipeline funciona, pero no permite sacar conclusiones de estabilidad ni de rendimiento: esas corresponden a la Etapa 7. Las duraciones tampoco son comparables con las locales, porque el entorno es distinto.
 
 ## Estado de la Etapa 0
 
-**Implemented.** Las verificaciones locales están completas. La etapa pasará a *Validated* solo cuando exista una ejecución exitosa en GitHub Actions (instalación, typecheck y línea base con 1 worker) y el reporte HTML publicado como artifact.
+**Validated.** Las verificaciones locales están completas y la ejecución remota `43689246937` de GitHub Actions fue exitosa: instalación, typecheck, línea base en Chromium con 1 worker (5 de 5 escenarios) y reporte HTML publicado como artifact.
 
 | Criterio de aceptación | Estado |
 |---|---|
@@ -74,11 +115,11 @@
 | 4. Cinco escenarios de línea base implementados | Cumplido |
 | 5. Ejecución correcta en Chromium | Cumplido (local) |
 | 6. Tres ejecuciones locales consecutivas registradas | Cumplido (serie 2) |
-| 7. GitHub Actions ejecuta instalación, typecheck y pruebas | **Pendiente** |
-| 8. Reporte HTML publicado como artifact | **Pendiente** |
-| 9. Workflow con un worker | Configurado. **Pendiente** de evidencia remota. |
+| 7. GitHub Actions ejecuta instalación, typecheck y pruebas | Cumplido (run `43689246937`) |
+| 8. Reporte HTML publicado como artifact | Cumplido (`playwright-report-43689246937-1`) |
+| 9. Workflow con un worker | Cumplido (log del run: `using 1 worker`) |
 | 10. Documentación de E0 actualizada | Cumplido |
-| 11. Cambios registrados en Git | Cumplido (pendiente de publicar) |
+| 11. Cambios registrados en Git | Cumplido (publicados en `stage/0-bootstrap`, PR #1) |
 
 ## Desviaciones aprobadas respecto al plan de E0
 

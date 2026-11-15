@@ -1,6 +1,6 @@
 # SQAF — Software Quality Automation Framework
 
-![CI](https://img.shields.io/badge/CI-pending%20first%20run-lightgrey)
+[![CI](https://github.com/lisethportuguez/sqaf-playwright/actions/workflows/ci.yml/badge.svg)](https://github.com/lisethportuguez/sqaf-playwright/actions/workflows/ci.yml)
 ![Playwright](https://img.shields.io/badge/Playwright-1.65.0-2EAD33)
 ![TypeScript](https://img.shields.io/badge/TypeScript-7.0.2-3178C6)
 ![Node.js](https://img.shields.io/badge/Node.js-26-339933)
@@ -9,8 +9,8 @@ A multi-layer functional test automation framework built with **Playwright** and
 
 SQAF is developed as the practical component of an undergraduate thesis (TFG) in Software Quality Management Engineering, and as a professional portfolio project.
 
-> **Project status: Stage 0 — Bootstrap, baseline and CI — _Implemented_ (remote CI validation pending).**
-> Local verifications are complete; Stage 0 will be marked *Validated* only after the first successful GitHub Actions run with its HTML report artifact.
+> **Project status: Stage 0 — Bootstrap, baseline and CI — _Validated_.**
+> Local runs and the first GitHub Actions run ([43689246937](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43689246937): typecheck passed, 5/5 baseline scenarios passed on Chromium with 1 worker, HTML report artifact uploaded) are recorded in [E0-baseline-runs.md](docs/validation/E0-baseline-runs.md).
 > The SQAF layers are **not implemented yet**. This repository currently contains the project foundation and an experimental *baseline* used to evaluate the framework later. See [Roadmap](#roadmap).
 
 ---
@@ -111,7 +111,7 @@ The [CI workflow](.github/workflows/ci.yml) runs on push to `main`, on pull requ
 
 ## Metrics
 
-Metric definitions and the experimental comparison (baseline vs. SQAF) are planned for Stages 6–7. Stage 0 run records: [E0-baseline-runs.md](docs/validation/E0-baseline-runs.md). Raw (sanitized) evidence of the six Stage 0 baseline executions, including the failed ones: [metrics/experiments/E0-baseline](metrics/experiments/E0-baseline/).
+Metric definitions and the experimental comparison (baseline vs. SQAF) are planned for Stages 6–7. Stage 0 run records: [E0-baseline-runs.md](docs/validation/E0-baseline-runs.md). Raw (sanitized) evidence of the six local Stage 0 baseline executions, including the failed ones: [metrics/experiments/E0-baseline](metrics/experiments/E0-baseline/).
 
 ## Roadmap
 
@@ -123,7 +123,7 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 | 0 | TypeScript 7 strict configuration (`npm run typecheck`) | Validated |
 | 0 | Experimental baseline — 5 scenarios (TC1, TC3, TC8, TC9, TC12) | Validated (local, 3 runs) |
 | 0 | Ad-blocking policy for the SUT | Validated (local) |
-| 0 | GitHub Actions CI workflow | Implemented — pending first remote run |
+| 0 | GitHub Actions CI workflow | Validated (run [43689246937](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43689246937)) |
 | 1 | Configuration layer (environments, timeouts, evidence policy) | Planned |
 | 2 | Page Object layer and fixtures | Planned |
 | 3 | Test Data Management (JSON, typed data, API user provisioning) | Planned |
