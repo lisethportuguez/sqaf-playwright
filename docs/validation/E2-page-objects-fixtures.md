@@ -174,7 +174,26 @@ No hubo desafío anti-bot en ninguna ejecución local de E2.
 - El orden real de los pasos coincide con el fijado por `workflow-steps.spec.ts`.
 - El contenido de `GITHUB_STEP_SUMMARY` (encabezados por paso) no se puede leer por la API. Su revisión visual en la pestaña *Actions* del run queda pendiente para la responsable.
 - Los artifacts `failure-evidence-*` e `integration-failure-evidence-*` no se han generado todavía porque no ha habido fallos.
-- El commit que añade esta sección solo modifica documentación. Como en `pull_request` GitHub evalúa el diff completo del PR, se espera que dispare otro run de CI del PR.
+- El commit `641ac9f` (solo documentación) disparó otro run del PR, como se esperaba: en `pull_request`, GitHub evalúa el diff completo del PR.
+
+**Run [`43755950821`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43755950821)** (evento `pull_request`, commit `641ac9f`, 2026-11-15 20:04:23–20:05:37 UTC), mismo job: **success**.
+
+| Paso | Resultado |
+|---|---|
+| Typecheck | success |
+| Unit tests (framework) | **82 passed** (7.6 s, 1 worker) |
+| Install Chromium | success (solo Chromium) |
+| Run baseline | **5 passed** (11.3 s, 1 worker, retries 0) |
+| Upload HTML report | `playwright-report-43755950821-1` (224 964 bytes) |
+| Upload failure evidence | skipped (sin fallos) |
+| Integration tests (Page Objects and fixtures) | **20 passed**, 0 flaky (23.0 s, 1 worker) |
+| Upload integration HTML report | `integration-report-43755950821-1` (239 530 bytes) |
+| Upload integration failure evidence | skipped (sin fallos) |
+
+- Entorno del runner, tomado del log: imagen `ubuntu-26.04` (versión 20261111.196.1) y Node.js v26.13.1 (resuelto desde `.nvmrc`).
+- Tras este run, el PR #5 tenía como head `641ac9f`, su único check (`Typecheck, unit, baseline and integration (Chromium)`) en SUCCESS y estado MERGEABLE/CLEAN.
+- Los artifacts vencen el 2026-11-29 (14 días).
+- Cualquier commit posterior solo documental también dispara un run del PR. Su resultado se informa en el PR y no se vuelve a registrar aquí, para no generar un ciclo de commits y runs contra el SUT.
 
 ## 10. Desviaciones respecto al plan
 
@@ -198,7 +217,8 @@ No hubo desafío anti-bot en ninguna ejecución local de E2.
 |---|---|
 | Elementos no ejercitados contra el SUT | `createAccount()`, `AccountCreatedPage`, `AccountDeletedPage`, `logout()`, `deleteAccount()` y `loggedInUser`. Requieren una sesión con cuenta: E3/E4 (D8). Los `data-qa` de las confirmaciones se observaron en E0; "Logout" proviene de los casos de prueba oficiales (TC4) |
 | Desafío anti-bot real | El guard se validó con una simulación. No se ha producido un desafío real desde E1 |
-| Más tráfico al SUT en CI | 9 de las 20 pruebas de integración contactan el SUT. Con 1 worker en CI y filtros de rutas, la exposición al desafío aumenta moderadamente |
+| Más tráfico al SUT en CI | 10 de las 20 pruebas de integración contactan el SUT (`auth` 3, `products` 5, `cart` 2); las otras 10 son offline. Con 1 worker en CI y filtros de rutas, la exposición al desafío aumenta moderadamente |
+| Advertencias de la plataforma de CI | Ver §13. No afectan a los resultados de E2 |
 | Retries de CI en `integration` | Hereda `retries: 2` en CI (decisión de E1, sin cambios). Un fallo intermitente aparecería como *flaky* en el reporte, no como un éxito silencioso |
 | Encabezado del reporter de clasificación | Lista todos los proyectos configurados. Se mitiga con encabezados por paso. Se propone revisarlo en E5/E6 |
 | Firefox y WebKit | Proyectos definidos con `data-qa`, sin tests hasta E4 |
@@ -210,16 +230,28 @@ No hubo desafío anti-bot en ninguna ejecución local de E2.
 | 1 | Typecheck con exit 0 | Cumplido | §6.1 (local); §9 (CI) |
 | 2 | Las 66 pruebas unitarias existentes siguen pasando | Cumplido | §6.2 y §9 (82 passed en local y en CI) |
 | 3 | La nueva prueba de arquitectura pasa | Cumplido | §6.2 y §9; mutaciones M6 y M7 |
-| 4 | Fixtures funcionales y tipadas | Cumplido (local) | §6.3 `fixtures.spec.ts`; typecheck |
+| 4 | Fixtures funcionales y tipadas | Cumplido | §6.3 `fixtures.spec.ts` (local); incluidas en los 20 passed de §9 (CI); typecheck |
 | 5 | Páginas y componentes implementados | Cumplido | `src/pages/` (1 base, 3 componentes, 8 páginas) |
-| 6 | Reutilización de `HeaderComponent` y `ProductCard` | Cumplido (local) | §6.3 `products.spec.ts` |
-| 7 | Guard anti-bot con simulación | Cumplido (local) | §6.3 `anti-bot.spec.ts`; M2 y M3 |
+| 6 | Reutilización de `HeaderComponent` y `ProductCard` | Cumplido | §6.3 `products.spec.ts` (local); incluidas en los 20 passed de §9 (CI) |
+| 7 | Guard anti-bot con simulación | Cumplido (desafío simulado; no frente a un desafío real) | §6.3 `anti-bot.spec.ts` (local); incluidas en los 20 passed de §9 (CI); M2 y M3 |
 | 8 | Las pruebas de integración pasan | Cumplido | §6.3 (20 passed en local); §9 (20 passed en CI) |
 | 9 | `integration` usa `sqafUse` | Cumplido | Contrato `sqaf-projects-contract.spec.ts`; M9 |
 | 10 | La línea base conserva exactamente su configuración | Cumplido | Contrato de E1 sin cambios y en verde; M8 |
 | 11 | Los cuatro archivos protegidos conservan su SHA-256 | Cumplido | §2.2 |
 | 12 | Tres corridas locales de E0 con 5/5 | Cumplido | §8 |
-| 13 | CI ejecuta typecheck, unitarias, línea base e integración | Cumplido | §9 (run `43755588344`) |
+| 13 | CI ejecuta typecheck, unitarias, línea base e integración | Cumplido | §9 (runs `43755588344` y `43755950821`) |
 | 14 | Sin dependencias nuevas ni cambios de versión | Cumplido | §2.2 (`package-lock.json` sin cambios) |
 | 15 | Documentación y ADR actualizados | Cumplido | ADR-0007 (nuevo); ADR-0003, ADR-0004 y ADR-0005; `architecture.md`; README; este documento |
-| 16 | PR de E2 abierto con checks en verde | Cumplido para `801bf20` (pendiente de confirmar el run del commit de documentación) | §9; PR [#5](https://github.com/lisethportuguez/sqaf-playwright/pull/5) |
+| 16 | PR de E2 abierto con checks en verde | Cumplido para `801bf20` y `641ac9f` | §9: run `43755950821` en success sobre `641ac9f`, PR [#5](https://github.com/lisethportuguez/sqaf-playwright/pull/5) abierto, MERGEABLE/CLEAN y con su check en SUCCESS |
+
+Los criterios anteriores son técnicos. **El cierre y la aprobación de E2 corresponden a la responsable del TFG.** Hasta entonces, el PR permanece abierto y sin merge.
+
+## 13. Advertencias de la plataforma de CI
+
+Las dos anotaciones aparecen en todos los runs desde E0 (registradas por primera vez en [E0-baseline-runs.md](E0-baseline-runs.md)). En el run `43755950821` se revisaron con la API de *check runs*:
+
+| Anotación | Impacto en SQAF | Recomendación |
+|---|---|---|
+| **warning:** "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/upload-artifact@v4" | Solo afecta al runtime interno de la acción que sube los artifacts. GitHub ya la ejecuta con Node.js 24 y la subida funciona (4 artifacts en los dos runs de E2). **No afecta** al Node.js del proyecto (v26.13.1, desde `.nvmrc`) ni a los resultados de las pruebas. `checkout@v5` y `setup-node@v5` no generan la advertencia | **Requiere una acción posterior.** `action.yml` declara `node20` en las versiones mayores v4 y v5, y `node24` desde la v6 (la última publicada es v7.0.2). Se recomienda evaluar `actions/upload-artifact@v6` o `@v7` en un cambio aparte y autorizado, revisando sus notas de versión (nombres de artifact, retención, `if-no-files-found`). No se ha cambiado |
+| **notice:** "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026" | Informativa. Según el log, el runner **ya** usa la imagen `ubuntu-26.04`, igual que en E0 y E1, así que la migración no introduce un cambio respecto de las ejecuciones registradas. La etiqueta `ubuntu-latest` podría cambiar de imagen en el futuro sin aviso en el repositorio | **No requiere una acción inmediata.** Para la comparabilidad del experimento de la Etapa 7 se recomienda valorar fijar `runs-on: ubuntu-26.04` (cambio de configuración de CI: requiere autorización y una actualización de ADR-0003). Mientras tanto, cada validación registra la imagen usada |
+

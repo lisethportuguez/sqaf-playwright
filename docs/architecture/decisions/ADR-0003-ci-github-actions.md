@@ -100,4 +100,5 @@ No se necesitan *secrets* ni *variables*. Solo hay que crear el repositorio púb
 
 - Cada PR de etapa queda validado de forma automática y reproducible.
 - Las acciones se referencian por versión mayor (`@v5`, `@v4`). Fijarlas por SHA es una mejora de seguridad que se puede evaluar más adelante.
+- Advertencias de la plataforma (revisadas en E2): `actions/upload-artifact@v4` declara Node.js 20, que está obsoleto (GitHub la ejecuta forzada con Node.js 24), y la etiqueta `ubuntu-latest` está migrando a Ubuntu 26 (el runner ya usa `ubuntu-26.04`). Ninguna afecta a los resultados. Las recomendaciones (evaluar `upload-artifact@v6` o posterior y fijar la imagen del runner para la Etapa 7) requieren autorización: ver [E2-page-objects-fixtures.md §13](../../validation/E2-page-objects-fixtures.md#13-advertencias-de-la-plataforma-de-ci).
 - Las pruebas en CI dependen de la disponibilidad del SUT externo.
