@@ -1,5 +1,6 @@
 import { expect, type Locator } from '@playwright/test';
 import { BasePage } from './base.page';
+import { fillSecret } from './components/secret-field';
 
 /**
  * Data the "Enter Account Information" form needs (D9: structural interface;
@@ -95,7 +96,7 @@ export class AccountInformationPage extends BasePage {
   /** Fills the whole form WITHOUT submitting it. */
   async fill(details: AccountDetails): Promise<void> {
     await (details.title === 'Mr' ? this.mrRadio : this.mrsRadio).check();
-    await this.passwordInput.fill(details.password);
+    await fillSecret(this.passwordInput, details.password); // ADR-0009 D16
     await this.birthDaySelect.selectOption(details.birthDate.day);
     await this.birthMonthSelect.selectOption(details.birthDate.month);
     await this.birthYearSelect.selectOption(details.birthDate.year);

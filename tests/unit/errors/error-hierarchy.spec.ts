@@ -50,9 +50,13 @@ test.describe('SqafError base', () => {
   });
 
   test('keeps the cause for debugging without copying it into the message', () => {
-    const cause = new Error('low-level detail');
+    const cause = new TypeError('low-level detail');
     const error = new InfrastructureError({ classification: 'infrastructure/network', summary: 's', evidence: [], cause });
-    expect(error.cause).toBe(cause);
+    // A sanitized copy (same name and message), not the original object: see the redaction tests.
+    expect(error.cause).toBeInstanceOf(Error);
+    expect(error.cause).not.toBe(cause);
+    expect((error.cause as Error).name).toBe('TypeError');
+    expect((error.cause as Error).message).toBe('low-level detail');
     expect(error.message).not.toContain('low-level detail');
   });
 });

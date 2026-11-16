@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { GENERATED_PASSWORD_PREFIX } from './redaction';
 
 /**
  * SQAF — Unique identifiers (Stage 5). See ADR-0009 (reproducible test data).
@@ -60,4 +61,12 @@ export function uniqueEmail(id: string = uniqueId('user'), domain = 'example.com
 /** Random secret (base64url) for passwords. Never derived from an id and never logged. */
 export function randomSecret(bytes = 12): string {
   return randomBytes(bytes).toString('base64url');
+}
+
+/**
+ * Password of a synthetic account: `Sqaf#` + 16 random base64url characters.
+ * The fixed format lets the redaction helpers recognise it (`redactSecrets`).
+ */
+export function generatedPassword(): string {
+  return `${GENERATED_PASSWORD_PREFIX}${randomSecret(12)}`;
 }

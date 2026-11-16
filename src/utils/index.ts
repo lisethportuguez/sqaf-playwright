@@ -15,4 +15,20 @@ export { formatDuration } from './duration';
 export { describeValue, isInteger, isNonEmptyString, isRecord, type JsonRecord } from './guards';
 export { CURRENCY_PREFIX, formatPrice, parsePrice } from './price';
 export { containsText, htmlText, htmlTitle, normalizeText, stripAnsi } from './text';
-export { createIdSource, createRunToken, randomSecret, uniqueEmail, uniqueId, type IdSource } from './unique';
+export {
+  GENERATED_PASSWORD_PREFIX,
+  generatedPasswordPattern,
+  REDACTED,
+  redactSecrets,
+  redactValues,
+  SECRET_KEY,
+} from './redaction';
+export {
+  createIdSource,
+  createRunToken,
+  generatedPassword,
+  randomSecret,
+  uniqueEmail,
+  uniqueId,
+  type IdSource,
+} from './unique';

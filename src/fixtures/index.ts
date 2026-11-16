@@ -40,4 +40,8 @@ export type {
   ProductSearchCase,
   UserAccount,
 } from '../data';
-export { ACCOUNT_CLEANUP_ATTACHMENT, type AccountCleanupRecord } from './data.fixture';
+export {
+  ACCOUNT_CLEANUP_ATTACHMENT,
+  CREDENTIAL_SAFE_EVIDENCE,
+  type AccountCleanupRecord,
+} from './data.fixture';

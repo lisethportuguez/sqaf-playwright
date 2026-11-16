@@ -208,3 +208,114 @@ test.describe('error-context: only the page snapshot is page text', () => {
     expect(pageSnapshotSection('- text: Please wait')).toBe('- text: Please wait');
   });
 });
+
+/*
+ * Stage 5 adjustment — REAL error-context attachments of Playwright 1.65
+ * (captured 2026-11-15 with a local fake server, see E5 §3.6). When an
+ * `expect` on a locator fails, the page snapshot is a ```yaml block INSIDE
+ * `# Error details`; there is no `# Page snapshot` section. Classified
+ * exactly as the reporter does: messages + pageSnapshotSection().
+ */
+test.describe('real Playwright 1.65 error-context attachments', () => {
+  const attachment = (message: string, yaml: string): string =>
+    [
+      '# Instructions',
+      '',
+      '- Following Playwright test failed.',
+      '',
+      '# Test info',
+      '',
+      '- Name: classify.spec.ts >> sample',
+      '- Location: classify.spec.ts:9:1',
+      '',
+      '# Error details',
+      '',
+      '```',
+      message,
+      '```',
+      '',
+      '```yaml',
+      yaml,
+      '```',
+      '',
+      '# Test source',
+      '',
+      '```ts',
+      "  1 | const unrelated = 'Please wait while your request is being verified... 502: Bad gateway';",
+      '```',
+    ].join('\n');
+
+  const classify = (message: string, yaml: string) =>
+    classifyFailure({ errorMessages: [message], pageSnapshot: pageSnapshotSection(attachment(message, yaml))! });
+
+  const NOT_VISIBLE = (locator: string): string =>
+    [
+      'Error: expect(locator).toBeVisible() failed',
+      '',
+      `Locator: ${locator}`,
+      'Expected: visible',
+      'Timeout: 2000ms',
+      'Error: element(s) not found',
+      '',
+      'Call log:',
+      `  - Expect "toBeVisible" ${locator} with timeout 2000ms`,
+      `  - waiting for ${locator}`,
+    ].join('\n');
+
+  test('the matcher snapshot inside "# Error details" is extracted, the test source is not', () => {
+    const snapshot = pageSnapshotSection(attachment('Error: boom', '- paragraph: OK'));
+    expect(snapshot).toBe('```yaml\n- paragraph: OK\n```');
+  });
+
+  test('C1: assertion failed on a Cloudflare 502 page → infrastructure/sut-unavailable', () => {
+    const result = classify(
+      NOT_VISIBLE("getByRole('heading', { name: 'Automation Exercise' })"),
+      '- heading "Bad gateway" [level=1]\n- text: Error code 502\n- paragraph: "502: Bad gateway"',
+    );
+    expect(result).toEqual({ classification: 'infrastructure/sut-unavailable', evidence: ['server error 502 Bad gateway'] });
+  });
+
+  test('C4b: locator assertion on the challenge page → anti-bot (Stage 1 behaviour restored)', () => {
+    const result = classify(
+      NOT_VISIBLE("getByRole('link', { name: 'Products' })"),
+      '- heading "Please wait while your request is being verified..." [level=1]',
+    );
+    expect(result.classification).toBe('infrastructure/anti-bot-challenge');
+  });
+
+  test('C5b: the EXPECTED text is "502 Bad Gateway" but the SUT answered → assertion/mismatch', () => {
+    const message = [
+      'Error: expect(locator).toHaveText(expected) failed',
+      '',
+      "Locator:  getByTestId('status')",
+      'Expected: "502 Bad Gateway"',
+      'Received: "OK"',
+      'Timeout:  2000ms',
+      '',
+      'Call log:',
+      "  - Expect \"toHaveText\" getByTestId('status') with timeout 2000ms",
+      "  - waiting for getByTestId('status')",
+      '    19 × locator resolved to <p data-qa="status">OK</p>',
+      '       - unexpected value "OK"',
+    ].join('\n');
+    expect(classify(message, '- paragraph: OK')).toEqual({
+      classification: 'assertion/mismatch',
+      evidence: ['failed assertion expect(locator).toHaveText(…)'],
+    });
+  });
+
+  test('C5: a price containing 502 on a 200 page → assertion/mismatch', () => {
+    const message = [
+      'Error: expect(locator).toHaveText(expected) failed',
+      '',
+      "Locator:  getByTestId('total')",
+      'Expected: "Rs. 500"',
+      'Received: "Rs. 502"',
+    ].join('\n');
+    expect(classify(message, '- paragraph: Rs. 502').classification).toBe('assertion/mismatch');
+  });
+
+  test('what the SUT RETURNED still counts: a received 502 title is infrastructure', () => {
+    expect(classifyFailure({ errorMessages: [BAD_GATEWAY_TITLE] }).classification).toBe('infrastructure/sut-unavailable');
+  });
+});

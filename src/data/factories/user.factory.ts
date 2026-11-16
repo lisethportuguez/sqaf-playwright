@@ -1,5 +1,5 @@
 import { DataValidationError } from '../../errors/data-validation-error';
-import { randomSecret, uniqueEmail, uniqueId, type IdSource } from '../../utils/unique';
+import { generatedPassword, uniqueEmail, uniqueId, type IdSource } from '../../utils/unique';
 import { testData } from '../providers/dataset-provider';
 import type { AccountProfile, UserAccount, UserAccountOverrides } from '../types';
 import { validate } from '../validation/schema';
@@ -66,5 +66,5 @@ export interface NewUserOptions {
 export function newUserAccount(overrides: UserAccountOverrides = {}, options: NewUserOptions = {}): UserAccount {
   const profile = testData.accountProfiles.byId(options.profileId ?? DEFAULT_PROFILE_ID);
   const dataId = options.idSource ? uniqueId('user', options.idSource) : uniqueId('user');
-  return buildUserAccount({ dataId, password: `Sqaf#${randomSecret()}` }, overrides, profile);
+  return buildUserAccount({ dataId, password: generatedPassword() }, overrides, profile);
 }

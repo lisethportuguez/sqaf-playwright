@@ -1,5 +1,5 @@
 import { CLOUDFLARE_CHALLENGE_SIGNATURES, type AntiBotSignatures } from '../../config/anti-bot';
-import { normalizeText } from '../utils/text';
+import { normalizeText, stripAnsi } from '../utils/text';
 import {
   ASSERTION_MISMATCH,
   AUTOMATION_LOCATOR_TIMEOUT,
@@ -30,7 +30,10 @@ import {
  *     ERR_BLOCKED_BY_CLIENT, which is the SQAF ad-blocking policy) and
  *     Node.js socket errors.
  *  4. infrastructure/sut-unavailable — a 5xx error page of the SUT or of
- *     Cloudflare (status code next to its standard reason phrase).
+ *     Cloudflare (status code next to its standard reason phrase), seen in
+ *     the page snapshot or in what Playwright RECEIVED. The expectation
+ *     written by the test (`Expected: …`, `Locator: …`, call log) is ignored:
+ *     a test that expects the text "502 Bad Gateway" is not an outage.
  *  5. automation/locator-timeout — a Playwright ACTION timed out while waiting
  *     for a locator.
  *  6. assertion/mismatch — a failed `expect(...)` assertion.
@@ -65,6 +68,10 @@ const SERVER_ERROR =
   /\b(500|502|503|504|520|521|522|523|524)\b\s*[:\-–]?\s*(Internal Server Error|Bad Gateway|Service (?:Temporarily )?Unavailable|Gateway Time-?out|Web server is returning an unknown error|Web server is down|Connection timed out|Origin is unreachable|A timeout occurred)/i;
 const ACTION_TIMEOUT = /\b(?:locator|page|frame|elementHandle)\.[A-Za-z]+: (?:Timeout|Test timeout of) \d+ms exceeded/;
 const WAITING_FOR_LOCATOR = /waiting for (?:locator\(|getBy[A-Z][A-Za-z]*\(|frameLocator\()/;
+/** A ```yaml accessibility snapshot block of the error-context attachment. */
+const YAML_BLOCK = /```yaml\r?\n[\s\S]*?\r?\n```/g;
+/** Lines that describe what the TEST asked for, not what the SUT answered. */
+const EXPECTATION_LINE = /^\s*(?:Expected\b[^:\n]*:|Locator:|Call log:|- |>?\s*\d+\s*\|)/;
 const FAILED_EXPECT = /\bexpect\((?:locator|page|received|response|value)\)\.(?:not\.)?[A-Za-z]+\(/;
 
 function antiBotEvidence(messages: readonly string[], snapshot: string, signatures: AntiBotSignatures): string[] {
@@ -91,6 +98,14 @@ function antiBotEvidence(messages: readonly string[], snapshot: string, signatur
     }
   }
   return evidence;
+}
+
+/** A failure message without the lines that only repeat the test's expectation. */
+function observedText(message: string): string {
+  return message
+    .split('\n')
+    .filter((line) => !EXPECTATION_LINE.test(line))
+    .join('\n');
 }
 
 function result(classification: FailureClassification, evidence: readonly string[]): FailureClassificationResult {
@@ -130,8 +145,9 @@ export function classifyFailure(
     if (socket !== undefined) return result(INFRASTRUCTURE_NETWORK, [`network error ${socket}`]);
   }
 
-  // 4. SUT unavailable (5xx error page in the messages or the page snapshot).
-  for (const text of [...messages, rawSnapshot]) {
+  // 4. SUT unavailable (5xx error page in the received values or the page snapshot).
+  const observed = failure.errorMessages.map((message) => normalizeText(observedText(stripAnsi(message))));
+  for (const text of [...observed, rawSnapshot]) {
     const server = SERVER_ERROR.exec(text);
     if (server) return result(INFRASTRUCTURE_SUT_UNAVAILABLE, [`server error ${server[1]} ${server[2]}`]);
   }
@@ -158,22 +174,32 @@ export function classifyFailure(
  *
  * Since Playwright 1.5x the attachment is a Markdown document with sections
  * (`# Instructions`, `# Test info`, `# Error details`, `# Page snapshot`,
- * `# Test source`). Only `# Page snapshot` describes the page: the other
- * sections repeat the error and include the TEST SOURCE CODE, whose string
- * literals must never be mistaken for page text (Stage 5 fix: a test that
- * mentions a challenge sentence or a 5xx page in its code was misclassified).
+ * `# Test source`). The page appears as ```yaml accessibility snapshots in
+ * TWO places (verified in playwright/lib/index.js, 1.65):
+ *  - inside `# Error details`, after the message of a failed `expect` on a
+ *    locator or page (the snapshot taken by the matcher), and
+ *  - in `# Page snapshot`, only when no matcher snapshot exists.
+ * Only those yaml blocks are page text. The rest repeats the error message
+ * (already classified) or is the TEST SOURCE CODE, whose string literals
+ * must never be mistaken for page text (Stage 5 fix).
  *
- * Returns the snapshot section, `undefined` if the document has sections but
- * no page snapshot, or the whole text when it has no sections (raw snapshot).
+ * Returns the yaml blocks of both sections, `undefined` if the document has
+ * sections but no snapshot, or the whole text when it has no sections (raw
+ * snapshot).
  */
 export function pageSnapshotSection(errorContext: string): string | undefined {
   const headings = [...errorContext.matchAll(/^# .+$/gm)];
   if (headings.length === 0) return errorContext;
-  const index = headings.findIndex((heading) => /^# page snapshot\s*$/i.test(heading[0]));
-  if (index === -1) return undefined;
-  const start = headings[index]!.index! + headings[index]![0].length;
-  const end = headings[index + 1]?.index ?? errorContext.length;
-  return errorContext.slice(start, end).trim();
+  const blocks: string[] = [];
+  headings.forEach((heading, index) => {
+    if (!/^# (?:error details|page snapshot)\s*$/i.test(heading[0])) return;
+    const start = heading.index! + heading[0].length;
+    const end = headings[index + 1]?.index ?? errorContext.length;
+    for (const block of errorContext.slice(start, end).matchAll(YAML_BLOCK)) {
+      blocks.push(block[0]);
+    }
+  });
+  return blocks.length > 0 ? blocks.join('\n') : undefined;
 }
 
 /** Zero count for every classification, in report order. */

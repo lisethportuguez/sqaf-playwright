@@ -4,6 +4,7 @@
  * Single import for every configuration value. Resolved once, validated and
  * frozen. See docs/architecture/architecture.md and ADR-0005.
  */
+import { CREDENTIAL_EVIDENCE } from './credential-evidence';
 import { BASELINE_EVIDENCE, sqafEvidencePolicy, type EvidencePolicy } from './evidence';
 import { loadEnvFileIfPresent, resolveEnvironment, type ResolvedEnvironment } from './environment';
 import { ENVIRONMENTS } from './environments';
@@ -25,6 +26,8 @@ export interface SqafConfig {
   readonly isCI: boolean;
   readonly timeouts: TimeoutPolicy;
   readonly evidence: EvidencePolicy;
+  /** Evidence of the tests that handle account credentials (Stage 3, ADR-0009 D16). The general policy above does not change. */
+  readonly credentialEvidence: EvidencePolicy;
   /** Locator policy of the SQAF projects (Stage 2, ADR-0007). Never applied to the baseline. */
   readonly locators: LocatorPolicy;
   /** Frozen Stage 0 conditions of the experimental baseline. */
@@ -46,6 +49,7 @@ export function buildSqafConfig(environment: ResolvedEnvironment): SqafConfig {
     isCI: environment.isCI,
     timeouts: SQAF_TIMEOUTS,
     evidence: sqafEvidencePolicy(environment.isCI),
+    credentialEvidence: CREDENTIAL_EVIDENCE,
     locators: SQAF_LOCATORS,
     baseline: Object.freeze({
       baseURL: ENVIRONMENTS.production.baseURL,
@@ -67,6 +71,7 @@ loadEnvFileIfPresent();
 export const sqafConfig: SqafConfig = buildSqafConfig(resolveEnvironment());
 
 export { ConfigurationError } from './environment';
+export { CREDENTIAL_EVIDENCE, credentialEvidenceViolations, type EffectiveEvidence } from './credential-evidence';
 export type { EvidencePolicy } from './evidence';
 export type { LocatorPolicy } from './locators';
 export type { TestDataPolicy } from './test-data';

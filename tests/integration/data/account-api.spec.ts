@@ -1,4 +1,4 @@
-import { expect, test } from '@sqaf/fixtures';
+import { CREDENTIAL_SAFE_EVIDENCE, expect, test } from '@sqaf/fixtures';
 
 /**
  * Stage 3 — Account provisioning against the SUT API (ADR-0009).
@@ -6,7 +6,11 @@ import { expect, test } from '@sqaf/fixtures';
  * The ONLY two tests of Stage 3 that create accounts. Each one creates one
  * synthetic account and removes it in the same test run; the fixtures attach
  * the cleanup result (`sqaf-account-cleanup`). Run them sparingly.
+ *
+ * They handle passwords: no trace and no video (ADR-0009 D16). The
+ * credential fixtures refuse to run without this line.
  */
+test.use(CREDENTIAL_SAFE_EVIDENCE);
 
 test('the account client creates, finds and deletes an account', async ({ accountApi, newUserData }) => {
   await test.step('create (API 11)', async () => {
