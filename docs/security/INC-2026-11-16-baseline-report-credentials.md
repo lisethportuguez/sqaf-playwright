@@ -2,7 +2,7 @@
 
 - **Fecha de detección:** 2026-11-16 (revisión del CI del PR #6, run `43795086819`)
 - **Severidad:** baja–media. Las cuentas expuestas eran sintéticas, de un solo uso y ya estaban eliminadas, pero el valor se publicó en artefactos descargables de un repositorio público
-- **Estado:** corregido en el PR #6 (commit `b977401`), validado en CI (run `43798520805`). Queda **1 artefacto afectado pendiente de autorización** (§6)
+- **Estado:** **cerrado.** Corregido en el PR #6 (commit `b977401`), validado en CI (run `43798520805`) y en el CI posterior al merge (`43802704575`, sin informe HTML de E0 ni contraseñas). Los **12 artefactos afectados** fueron eliminados (§6). Incluido en `v0.4.0`
 - **Decisiones relacionadas:** [ADR-0003](../architecture/decisions/ADR-0003-ci-github-actions.md) (artefactos de CI), [ADR-0008](../architecture/decisions/ADR-0008-error-handling-utilities.md) D13 (redacción del reporter), [ADR-0009](../architecture/decisions/ADR-0009-test-data-management.md) D16 (política de credenciales de las suites SQAF)
 
 Este documento no contiene contraseñas, direcciones de correo ni otros datos de las cuentas.
@@ -81,7 +81,15 @@ Con autorización, tras verificar las 11 cuentas (404), se eliminaron **solo los
 
 Se conservan, por no contener la contraseña: `playwright-report-43690859628-1` (primer intento, desafío anti-bot) y `playwright-report-43691579360-1`, más los informes de integración.
 
-**Pendiente de autorización:** `playwright-report-43795086819-1` (ID `14193813624`, CI del PR #6 antes de la corrección) también contiene la contraseña de TC1. No estaba en la lista autorizada (error de conteo del análisis previo). Su cuenta de TC1 ya se verificó como inexistente (404). Caduca el 2026-11-30.
+**Artefacto adicional (eliminado con autorización posterior):**
+
+| Run | Artefacto | ID | Resultado |
+|---|---|---|---|
+| 43795086819 | playwright-report-43795086819-1 (CI del PR #6 antes de la corrección) | 14193813624 | Eliminado (404 tras borrar). Run y log conservados |
+
+No figuraba en la primera lista autorizada por un error de conteo del análisis previo. Antes de borrarlo se confirmó que el ID seguía correspondiendo al artefacto y que su cuenta de TC1 no existía (`responseCode 404`).
+
+**Total eliminado: 12 artefactos** (11 iniciales y 1 adicional). En el repositorio solo quedan los 2 informes de línea base que se verificaron sin contraseña.
 
 ## 7. Riesgo residual
 

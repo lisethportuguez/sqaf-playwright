@@ -1,6 +1,6 @@
 # Arquitectura de SQAF
 
-> **Estado del documento:** Ciclo 1 (E5 + E3), en revisión en la rama `stage/3-5-data-utils-errors`. Describe la arquitectura **objetivo** (diseñada) y el estado **real** de la implementación. Están implementadas la configuración (E1), los Page Objects y las fixtures (E2), las utilidades comunes y el manejo de errores con la taxonomía completa (E5, ADR-0008) y la gestión de datos de prueba con aprovisionamiento de cuentas por API (E3, ADR-0009). Del reporting solo existe el reporter de clasificación de fallos.
+> **Estado del documento:** Ciclo 1 (E5 + E3) cerrado: PR #6 fusionado en `main` (`f4f79e7`), tag `v0.4.0`. Describe la arquitectura **objetivo** (diseñada) y el estado **real** de la implementación. Están implementadas la configuración (E1), los Page Objects y las fixtures (E2), las utilidades comunes y el manejo de errores con la taxonomía completa (E5, ADR-0008) y la gestión de datos de prueba con aprovisionamiento de cuentas por API (E3, ADR-0009). Del reporting solo existe el reporter de clasificación de fallos.
 
 ## 1. Propósito
 
@@ -40,7 +40,7 @@ flowchart LR
 | Error Handling | Errores contextualizados y clasificación de fallos | `src/errors/` | **Implemented (E1, E5)**: `SqafError`, `InfrastructureError`, `DataValidationError`, `ApiError`, guard anti-bot y taxonomía de 8 clasificaciones (ADR-0006, ADR-0008) |
 | Reporting & Metrics | Reportes nativos, evidencias, historial, métricas | `src/reporting/`, `metrics/` | **Parcial (E1, E5)**: reporter de clasificación de fallos con la taxonomía completa. Resto Planned (E6) |
 
-## 4. Componentes existentes (Etapas 0, 1 y 2)
+## 4. Componentes existentes (Etapas 0, 1, 2, 3 y 5)
 
 ### 4.1 Línea base experimental (`baseline/`)
 
@@ -301,8 +301,8 @@ El marco metodológico del TFG define un árbol de referencia plano. El reposito
 | `tests/checkout/` | `tests/e2e/checkout/` | E4 | Planned |
 | — (verificación del propio framework) | `tests/unit/`, `tests/integration/` | E1–E3, E5 | Implemented |
 | `pages/` | `src/pages/` (+ `components/`) | E2 | Validated |
-| `data/` | `test-data/` (JSON) + `src/data/` (tipos, validación, datasets, providers, factories) | E3 | Implemented, validado en local |
-| — (aprovisionamiento de datos) | `src/api/` | E3 | Implemented, validado en local |
+| `data/` | `test-data/` (JSON) + `src/data/` (tipos, validación, datasets, providers, factories) | E3 | Implemented (`v0.4.0`) |
+| — (aprovisionamiento de datos) | `src/api/` | E3 | Implemented (`v0.4.0`) |
 | `fixtures/` | `src/fixtures/` | E2, E3 | Implemented |
 | `utils/` | `src/utils/` (utilidades) y `src/errors/` (manejo de errores) | E1, E5 | Implemented |
 | `config/` | `config/` | E1 | Validated |

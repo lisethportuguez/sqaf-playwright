@@ -9,7 +9,7 @@ A multi-layer functional test automation framework built with **Playwright** and
 
 SQAF is developed as the practical component of an undergraduate thesis (TFG) in Software Quality Management Engineering, and as a professional portfolio project.
 
-> **Project status: Cycle 1 — Stage 5 (common utilities and error handling) + Stage 3 (test data management) — in development on `stage/3-5-data-utils-errors`, not merged.** Stages 0, 1 and 2 are closed, merged into `main` and tagged `v0.1.0`, `v0.2.0` and `v0.3.0`.
+> **Project status: Stages 0, 1, 2, 3 and 5 are closed, merged into `main` and tagged `v0.1.0`, `v0.2.0`, `v0.3.0` and `v0.4.0`** (Stages 3 and 5 were delivered together as cycle 1 in PR [#6](https://github.com/lisethportuguez/sqaf-playwright/pull/6)). Next: Stage 4 (functional scenarios).
 > Evidence: Stage 0 in [E0-baseline-runs.md](docs/validation/E0-baseline-runs.md), Stage 1 in [E1-configuration.md](docs/validation/E1-configuration.md), Stage 2 in [E2-page-objects-fixtures.md](docs/validation/E2-page-objects-fixtures.md), Stage 5 in [E5-utilities-error-handling.md](docs/validation/E5-utilities-error-handling.md), Stage 3 in [E3-test-data-management.md](docs/validation/E3-test-data-management.md).
 > Cycle 1 adds the error hierarchy and the full failure taxonomy, common utilities, JSON datasets with typed providers and runtime validation, data factories, data-driven tests and API account provisioning with verified cleanup. The 15 SQAF functional scenarios are **not implemented yet** (Stage 4). See [Roadmap](#roadmap).
 
@@ -256,12 +256,13 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 | 2 | Anti-bot guard wired into page navigation | Validated with a simulated challenge (offline); not yet exercised against a live challenge |
 | 2 | Layer dependency rule check | Validated (unit test with controlled mutations) |
 | 2 | CI integration step with separate artifacts | Validated (CI run [43755588344](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43755588344)); integration failure-evidence artifact not yet exercised |
-| 3 | Test Data Management: JSON datasets, runtime validation, typed providers, factories | Validated locally (unit tests; datasets used by integration tests); CI pending |
-| 3 | Data-driven tests (invalid credentials, product search, user profiles) | Validated locally (5 SUT cases + offline cases); CI pending |
-| 3 | Account API client and `newUserData` / `testUser` fixtures with verified cleanup | Validated locally (2 SUT tests, cleanup verified through the API); CI pending |
+| 3 | Test Data Management: JSON datasets, runtime validation, typed providers, factories | Validated (local and CI runs [43800662549](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43800662549) and [43802704575](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43802704575)) |
+| 3 | Data-driven tests (invalid credentials, product search, user profiles) | Validated (5 SUT cases + offline cases, local and CI) |
+| 3 | Account API client and `newUserData` / `testUser` fixtures with verified cleanup | Validated (2 SUT tests per run, cleanup verified through the API, local and CI) |
+| 3 | Credential-safe evidence policy (no trace or video for tests that handle passwords) | Validated (runtime contract with a fake SUT, local and CI) |
 | 4 | Test layer — 15 functional scenarios, tags, traceability | Planned |
-| 5 | Error hierarchy (`SqafError`, `DataValidationError`, `ApiError`) and full failure taxonomy | Validated locally (unit tests); CI pending; not yet observed on real infrastructure failures except one local DNS failure |
-| 5 | Common utilities (price, unique ids/e-mails, text, durations, guards) | Validated locally (unit tests); CI pending |
+| 5 | Error hierarchy (`SqafError`, `DataValidationError`, `ApiError`) and full failure taxonomy | Validated (local and CI); real failures observed: a local DNS failure and an HTTP 503 of the SUT in CI, now classified from structured HTTP evidence |
+| 5 | Common utilities (price, unique ids/e-mails, text, durations, guards, secret redaction) | Validated (unit tests, local and CI) |
 | 6 | Reporting and metrics (HTML, JSON, JUnit, MetricsReporter) | Planned |
 | 7 | Experimental validation and results | Planned |
 
@@ -288,7 +289,7 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 
 ## Versioning
 
-Repository milestones are marked with Git tags (`v0.1.0` Stage 0, `v0.2.0` Stage 1, `v0.3.0` Stage 2). The `version` field in `package.json` is intentionally left at `0.1.0`: the package is private and never published, and changing the field would also rewrite `package-lock.json`, which is kept unchanged across stages. Tags, not `package.json`, identify each stage.
+Repository milestones are marked with Git tags (`v0.1.0` Stage 0, `v0.2.0` Stage 1, `v0.3.0` Stage 2, `v0.4.0` Stages 3 and 5). The `version` field in `package.json` is intentionally left at `0.1.0`: the package is private and never published, and changing the field would also rewrite `package-lock.json`, which is kept unchanged across stages. Tags, not `package.json`, identify each stage.
 
 ## License
 

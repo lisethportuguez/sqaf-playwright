@@ -1,6 +1,6 @@
 # ADR-0009: Gestión de datos de prueba, Data-Driven Testing y aprovisionamiento de cuentas
 
-- **Estado:** Propuesto (implementado en la rama `stage/3-5-data-utils-errors`; pendiente de revisión por la responsable del TFG)
+- **Estado:** Aceptado e implementado (aprobado por la responsable del TFG; PR [#6](https://github.com/lisethportuguez/sqaf-playwright/pull/6) fusionado en `main`, commit de merge `f4f79e7`, tag `v0.4.0`)
 - **Fecha:** 2026-11-15
 - **Etapa:** E3 (ciclo 1)
 - **Relacionado:** [ADR-0007](ADR-0007-page-objects-fixtures.md) (D8, D9, D11), [ADR-0008](ADR-0008-error-handling-utilities.md)

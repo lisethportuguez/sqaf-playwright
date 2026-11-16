@@ -3,8 +3,8 @@
 - **Etapa:** E3 (ciclo 1, después de E5)
 - **Rama:** `stage/3-5-data-utils-errors` (creada desde `main` en `403115f`, merge de E2, tag `v0.3.0`)
 - **Fecha:** 2026-11-15 (hora local, UTC-6)
-- **Decisiones:** [ADR-0009](../architecture/decisions/ADR-0009-test-data-management.md) (propuesto, pendiente de revisión)
-- **Estado:** implementado y validado en local. **No cerrado**: falta la revisión de la responsable del TFG y la ejecución en CI.
+- **Decisiones:** [ADR-0009](../architecture/decisions/ADR-0009-test-data-management.md) (aceptado e implementado)
+- **Estado:** **Completada y cerrada.** PR [#6](https://github.com/lisethportuguez/sqaf-playwright/pull/6) fusionado en `main` (commit de merge `f4f79e7666d9111be641760bd7e8c49c2b80d189`), tag `v0.4.0`. CI del PR [`43800662549`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43800662549) y CI posterior al merge [`43802704575`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43802704575) en verde.
 
 ## 1. Alcance
 
@@ -151,7 +151,7 @@ No hay dependencias nuevas ni cambios de versión (Node.js 26, Playwright 1.65.0
 
 | Tema | Situación |
 |---|---|
-| CI no ejecutado | La rama no se ha publicado. El paso de integración de CI pasará de 20 a 30 pruebas (17 contra el SUT, 2 cuentas por ejecución, 3 contratos de seguridad sin SUT) sin cambiar `ci.yml` |
+| Tráfico de CI | Resuelto: CI ejecutado (runs `43800662549` y `43802704575`). El paso de integración tiene 31 pruebas: 17 contra el SUT (2 cuentas por ejecución, creadas y eliminadas) y 4 contratos sin SUT |
 | Secretos en artefactos | **Resuelto** (§9, ADR-0009 D16). Residual: una aserción sobre el valor de una contraseña dejaría el valor en el mensaje del paso; está prohibido por regla y no existe ninguna |
 | Cuenta huérfana por un fallo en el teardown | Posible si la red o el SUT fallan justo durante el borrado. El test falla de forma visible y el mensaje incluye el e-mail |
 | Fallo transitorio de DNS local | Observado una vez al arrancar 4 workers. No se añadieron reintentos: SQAF no oculta fallos de infraestructura (ADR-0006) |
@@ -227,9 +227,20 @@ Durante la revisión del CI del PR #6 se detectó que el informe HTML de la lín
 | Aspecto | Resultado |
 |---|---|
 | Cuentas de TC1 de los 11 artefactos afectados | 11/11 inexistentes (API 14, `responseCode 404`, solo lectura) |
-| Artefactos retirados | 11 informes `playwright-report-*` eliminados (runs y logs conservados). 1 artefacto del PR #6 pendiente de autorización |
+| Artefactos retirados | 12 informes `playwright-report-*` eliminados: los 11 iniciales y, con autorización posterior, el del CI del PR #6 (`14193813624`). Runs y logs conservados |
 | Corrección | CI publica solo el JSON de clasificación de la línea base, y la evidencia de fallo excluye sus salidas (`b977401`). El extracto de error del JSON se redacta (ADR-0008 D13) |
 | Archivos de E0 | `baseline/baseline.spec.ts`, `config/evidence.ts` y `playwright.config.ts` sin cambios (SHA-256 iguales a `main`) |
 | Pruebas locales | Typecheck; 238/238 unitarias; 4/4 mutaciones; contrato de seguridad 3/3; sonda de `fill` fallido redactada; línea base 5/5 con la cuenta de TC1 eliminada (404) |
 | CI (`43798520805`) | Éxito: 238 unitarias, línea base 5/5, integración 30/30. Artefactos: `baseline-classification-43798520805-1` e `integration-report-43798520805-1`, sin ningún `playwright-report-*` y con 0 contraseñas |
 | Riesgo residual | Un fallo dentro del `fill(password)` de TC1, con el campo ya localizado, imprimiría el valor en la consola de CI (procedimiento en el incidente, §7) |
+
+## Cierre de E3
+
+| Elemento | Valor |
+|---|---|
+| PR | [#6](https://github.com/lisethportuguez/sqaf-playwright/pull/6) "E3/E5: Test Data Management, Utilities and Error Handling", **MERGED** (2026-11-16) |
+| Commit de merge | `f4f79e7666d9111be641760bd7e8c49c2b80d189` (padres `403115f` y `c518c80`) |
+| Tag | `v0.4.0` (anotado), apunta a `f4f79e7`. Sin GitHub Release |
+| CI del PR | [`43800662549`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43800662549): success. 257 unitarias, línea base 5/5, integración 31/31, sin reintentos |
+| CI posterior al merge | [`43802704575`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43802704575) (push a `main`): success. 257 unitarias, línea base 5/5, integración 31/31, sin reintentos. Artefactos sin contraseñas y sin informe HTML de E0 |
+| Integridad | Archivos protegidos de E0 con los mismos SHA-256; evidencias de E0, E1 y E2 sin cambios entre `403115f` y `f4f79e7` |
