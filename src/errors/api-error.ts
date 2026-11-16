@@ -1,5 +1,6 @@
 import { API_REQUEST_FAILED } from './classifications';
 import { SqafError } from './sqaf-error';
+import { redactSecrets } from '../utils/redaction';
 
 /**
  * SQAF — Failed API request (Stage 5, used by the Stage 3 account client). See ADR-0008.
@@ -58,6 +59,7 @@ export class ApiError extends SqafError<typeof API_REQUEST_FAILED> {
     this.endpoint = details.endpoint;
     this.httpStatus = details.httpStatus;
     this.responseCode = details.responseCode;
-    this.responseMessage = details.responseMessage;
+    // Redacted like the message (Stage 4, E4.5): the field is serialized with the error.
+    this.responseMessage = details.responseMessage === undefined ? undefined : redactSecrets(details.responseMessage);
   }
 }

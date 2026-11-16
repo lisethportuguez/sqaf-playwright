@@ -22,7 +22,8 @@ import { redactSecrets, redactValues } from '../utils/redaction';
  *
  * Every fixture is test-scoped: each test gets its own user and nothing is
  * shared between tests or workers (ADR-0007 D11). The cleanup result is
- * attached to the test (`sqaf-account-cleanup`) without the password.
+ * attached to the test (`sqaf-account-cleanup`) without the password and,
+ * since the E4.5 security closure, without the e-mail (its data id rebuilds it).
  *
  * Credential safety (ADR-0009 D16). accountApi, newUserData and testUser
  * handle passwords, so they depend on `credentialGuard`, which:
@@ -100,20 +101,56 @@ async function clearPasswordInputs(context: BrowserContext): Promise<void> {
   }
 }
 
+/**
+ * Content of the `sqaf-account-cleanup` attachment. No e-mail and no password
+ * (E4.5 security closure: reports record attachments verbatim). The data id
+ * identifies the account: its address is `uniqueEmail(dataId)`.
+ */
 export interface AccountCleanupRecord {
   readonly fixture: 'newUserData' | 'testUser';
   readonly dataId: string;
-  readonly email: string;
   readonly deleteOutcome: DeleteOutcome;
-  /** Only for testUser: API 14 confirmed that the account no longer exists. */
-  readonly verifiedAbsent?: boolean;
+  /** API 14 confirmed that the account no longer exists (both fixtures since Stage 4, ADR-0010 D5). */
+  readonly verifiedAbsent: boolean;
 }
 
-async function recordCleanup(testInfo: TestInfo, record: AccountCleanupRecord): Promise<void> {
+/** The account operations the cleanup needs (an `AccountApiClient` fits). */
+export type CleanupApi = Pick<AccountApiClient, 'deleteAccount' | 'findAccountByEmail'>;
+
+/**
+ * Deletes the account (API 12, idempotent: 'not-found' is valid when the
+ * scenario deleted it through the UI or never registered it), verifies with
+ * API 14 that it no longer exists, attaches `sqaf-account-cleanup` and fails
+ * with an ApiError if the account is still there.
+ */
+export async function cleanUpAccount(
+  api: CleanupApi,
+  testInfo: Pick<TestInfo, 'attach'>,
+  fixture: AccountCleanupRecord['fixture'],
+  user: Pick<UserAccount, 'dataId' | 'email' | 'password'>,
+): Promise<AccountCleanupRecord> {
+  const deleteOutcome = await api.deleteAccount(user);
+  const remaining = await api.findAccountByEmail(user.email);
+  const record: AccountCleanupRecord = {
+    fixture,
+    dataId: user.dataId,
+    deleteOutcome,
+    verifiedAbsent: remaining === undefined,
+  };
   await testInfo.attach(ACCOUNT_CLEANUP_ATTACHMENT, {
     contentType: 'application/json',
     body: JSON.stringify(record, null, 2),
   });
+  if (remaining !== undefined) {
+    throw new ApiError({
+      operation: `${fixture} cleanup`,
+      method: 'GET',
+      endpoint: '/api/getUserDetailByEmail',
+      accountEmail: user.email,
+      summary: 'The test account still exists after its deletion: delete it by hand.',
+    });
+  }
+  return record;
 }
 
 function annotate(testInfo: TestInfo, fixture: string, user: UserAccount): void {
@@ -156,9 +193,8 @@ export const test = base.extend<DataOptions & DataFixtures>({
     credentialGuard.register(user.password);
     annotate(testInfo, 'newUserData', user);
     await use(user);
-    // Idempotent safety net: 'not-found' when the test never registered the user.
-    const deleteOutcome = await accountApi.deleteAccount(user);
-    await recordCleanup(testInfo, { fixture: 'newUserData', dataId: user.dataId, email: user.email, deleteOutcome });
+    // Safety net: 'not-found' when the scenario deleted the account itself or never registered it.
+    await cleanUpAccount(accountApi, testInfo, 'newUserData', user);
   },
 
   testUser: async ({ userProfile, accountApi, credentialGuard }, use, testInfo) => {
@@ -177,23 +213,6 @@ export const test = base.extend<DataOptions & DataFixtures>({
     await use(user);
 
     // 'not-found' is valid: the scenario may have deleted the account itself (UI "Delete Account").
-    const deleteOutcome = await accountApi.deleteAccount(user);
-    const remaining = await accountApi.findAccountByEmail(user.email);
-    await recordCleanup(testInfo, {
-      fixture: 'testUser',
-      dataId: user.dataId,
-      email: user.email,
-      deleteOutcome,
-      verifiedAbsent: remaining === undefined,
-    });
-    if (remaining !== undefined) {
-      throw new ApiError({
-        operation: 'testUser cleanup',
-        method: 'GET',
-        endpoint: '/api/getUserDetailByEmail',
-        accountEmail: user.email,
-        summary: 'The test account still exists after its deletion: delete it by hand.',
-      });
-    }
+    await cleanUpAccount(accountApi, testInfo, 'testUser', user);
   },
 });

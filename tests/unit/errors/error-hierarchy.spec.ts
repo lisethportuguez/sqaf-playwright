@@ -46,7 +46,7 @@ test.describe('SqafError base', () => {
   test('context values of secret-looking keys are always redacted', () => {
     expect(
       sanitizeContext({ password: 'p4ss', Password: 'x', apiToken: 't', Account: 'sqaf.a@example.com', skipped: undefined }),
-    ).toEqual({ password: REDACTED, Password: REDACTED, apiToken: REDACTED, Account: 'sqaf.a@example.com' });
+    ).toEqual({ password: REDACTED, Password: REDACTED, apiToken: REDACTED, Account: '[e-mail redacted]' });
   });
 
   test('keeps the cause for debugging without copying it into the message', () => {
@@ -118,7 +118,8 @@ test.describe('ApiError', () => {
         'HTTP status: 200',
         'Response code: 400',
         'Response message: Email already exists!',
-        'Account: sqaf.user-x-1@example.com',
+        // Stage 4 (E4.5): e-mails are redacted, with no data id (final security closure).
+        'Account: [e-mail redacted]',
       ].join('\n'),
     );
     expect([error.operation, error.endpoint, error.httpStatus, error.responseCode]).toEqual([

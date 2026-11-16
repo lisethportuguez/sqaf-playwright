@@ -4,7 +4,11 @@ import {
   AccountDeletedPage,
   AccountInformationPage,
   CartPage,
+  CategoryProductsPage,
+  CheckoutPage,
   HomePage,
+  OrderPlacedPage,
+  PaymentPage,
   ProductDetailsPage,
   ProductsPage,
   SignupLoginPage,
@@ -27,6 +31,10 @@ export interface PageFixtures {
   readonly productsPage: ProductsPage;
   readonly productDetailsPage: ProductDetailsPage;
   readonly cartPage: CartPage;
+  readonly categoryProductsPage: CategoryProductsPage;
+  readonly checkoutPage: CheckoutPage;
+  readonly paymentPage: PaymentPage;
+  readonly orderPlacedPage: OrderPlacedPage;
 }
 
 export const test = base.extend<PageFixtures>({
@@ -53,5 +61,17 @@ export const test = base.extend<PageFixtures>({
   },
   cartPage: async ({ page }, use) => {
     await use(new CartPage(page));
+  },
+  categoryProductsPage: async ({ page }, use) => {
+    await use(new CategoryProductsPage(page));
+  },
+  checkoutPage: async ({ page }, use) => {
+    await use(new CheckoutPage(page));
+  },
+  paymentPage: async ({ page }, use) => {
+    await use(new PaymentPage(page));
+  },
+  orderPlacedPage: async ({ page }, use) => {
+    await use(new OrderPlacedPage(page));
   },
 });
