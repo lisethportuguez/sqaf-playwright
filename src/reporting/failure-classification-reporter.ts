@@ -7,14 +7,19 @@ import type {
   TestCase,
   TestResult,
 } from '@playwright/test/reporter';
-import { classifyFailure, type FailureClassification } from '../errors/failure-classification';
-import { stripAnsi } from '../utils/anti-bot-detector';
+import {
+  classifyFailure,
+  emptyClassificationCounts,
+  pageSnapshotSection,
+  type FailureClassification,
+} from '../errors/failure-classification';
+import { stripAnsi } from '../utils/text';
 
 /**
  * SQAF — Failure classification reporter (Stage 1). See ADR-0006.
  *
- * Observes every failed attempt and classifies it (Stage 1: anti-bot challenge
- * or unclassified). The classification is written to the console, to a JSON
+ * Observes every failed attempt and classifies it with the SQAF taxonomy
+ * (Stage 5, ADR-0008). The classification is written to the console, to a JSON
  * file and, in GitHub Actions, to the job summary.
  *
  * It is strictly an OBSERVER: it never changes a test status, the number of
@@ -40,7 +45,8 @@ export interface ClassifiedAttempt {
 }
 
 export interface FailureClassificationReport {
-  readonly schemaVersion: 1;
+  /** 2 since Stage 5: `byClassification` lists every classification of the taxonomy. */
+  readonly schemaVersion: 2;
   readonly generatedAt: string;
   readonly runStatus: FullResult['status'];
   readonly projects: readonly string[];
@@ -86,7 +92,9 @@ export function renderStepSummary(report: FailureClassificationReport): string {
   lines.push(
     '| Classification | Failed attempts |',
     '|---|---|',
-    ...Object.entries(report.totals.byClassification).map(([name, count]) => `| \`${name}\` | ${count} |`),
+    ...Object.entries(report.totals.byClassification)
+      .filter(([, count]) => count > 0)
+      .map(([name, count]) => `| \`${name}\` | ${count} |`),
     '',
     '| Test | Project | Retry | Status | Classification | Evidence |',
     '|---|---|---|---|---|---|',
@@ -124,7 +132,8 @@ export default class FailureClassificationReporter implements Reporter {
     if (result.status === 'passed' || result.status === 'skipped') return;
 
     const messages = result.errors.map((error) => stripAnsi(error.message ?? error.value ?? ''));
-    const context = readErrorContext(result);
+    const errorContext = readErrorContext(result);
+    const context = errorContext === undefined ? undefined : pageSnapshotSection(errorContext);
     const { classification, evidence } = classifyFailure({
       errorMessages: messages,
       ...(context !== undefined ? { pageSnapshot: context } : {}),
@@ -144,14 +153,11 @@ export default class FailureClassificationReporter implements Reporter {
   }
 
   onEnd(result: FullResult): void {
-    const byClassification: Record<FailureClassification, number> = {
-      'infrastructure/anti-bot-challenge': 0,
-      unclassified: 0,
-    };
+    const byClassification = emptyClassificationCounts();
     for (const failure of this.failures) byClassification[failure.classification] += 1;
 
     const report: FailureClassificationReport = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       generatedAt: new Date().toISOString(),
       runStatus: result.status,
       projects: this.projects,
@@ -167,7 +173,9 @@ export default class FailureClassificationReporter implements Reporter {
     if (this.failures.length === 0) {
       console.log(`[SQAF] Failure classification: no failed attempts. Report: ${where}`);
     } else {
-      const parts = Object.entries(byClassification).map(([name, count]) => `${count} ${name}`);
+      const parts = Object.entries(byClassification)
+        .filter(([, count]) => count > 0)
+        .map(([name, count]) => `${count} ${name}`);
       console.log(
         `[SQAF] Failure classification: ${this.failures.length} failed attempt(s) — ${parts.join(', ')}. Report: ${where}`,
       );

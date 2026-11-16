@@ -1,19 +1,30 @@
+import {
+  INFRASTRUCTURE_ANTI_BOT,
+  INFRASTRUCTURE_NETWORK,
+  INFRASTRUCTURE_SUT_UNAVAILABLE,
+} from './classifications';
+import { SqafError, type ErrorContext } from './sqaf-error';
+
 /**
- * SQAF — Infrastructure errors (Stage 1, minimal subset of the Error Handling
- * layer planned for Stage 5). See ADR-0006.
+ * SQAF — Infrastructure errors (Stage 1, extended in Stage 5). See ADR-0006
+ * and ADR-0008.
  *
- * An InfrastructureError makes the test FAIL with an explicit cause. It is
- * never caught to turn a failure into a pass.
+ * An external cause outside the product and the automation: an anti-bot
+ * challenge, a network failure or an unavailable SUT. The test FAILS with
+ * this explicit cause; it is never caught to turn a failure into a pass and
+ * is not retried specially.
+ *
+ * Stage 1 compatibility: same name, `category`, `classification`, `evidence`,
+ * `url` and message format (`[SQAF:...] summary`, `URL:`, `Evidence:` and the
+ * closing sentence).
  */
 
-export const INFRASTRUCTURE_ANTI_BOT = 'infrastructure/anti-bot-challenge' as const;
+export { classificationMarker, INFRASTRUCTURE_ANTI_BOT } from './classifications';
 
-export type InfrastructureClassification = typeof INFRASTRUCTURE_ANTI_BOT;
-
-/** Stable, machine-readable prefix of every InfrastructureError message. */
-export function classificationMarker(classification: InfrastructureClassification): string {
-  return `[SQAF:${classification}]`;
-}
+export type InfrastructureClassification =
+  | typeof INFRASTRUCTURE_ANTI_BOT
+  | typeof INFRASTRUCTURE_NETWORK
+  | typeof INFRASTRUCTURE_SUT_UNAVAILABLE;
 
 export interface InfrastructureErrorDetails {
   readonly classification: InfrastructureClassification;
@@ -21,25 +32,26 @@ export interface InfrastructureErrorDetails {
   /** Signatures or other facts that justify the classification. */
   readonly evidence: readonly string[];
   readonly url?: string;
+  /** Additional facts (Stage 5), rendered after the URL. */
+  readonly context?: ErrorContext;
+  readonly cause?: unknown;
 }
 
-export class InfrastructureError extends Error {
+const NOTE = 'This is an external infrastructure failure: the test is reported as FAILED and is not retried specially.';
+
+export class InfrastructureError extends SqafError<InfrastructureClassification> {
   override readonly name = 'InfrastructureError';
-  readonly category = 'infrastructure' as const;
-  readonly classification: InfrastructureClassification;
-  readonly evidence: readonly string[];
   readonly url: string | undefined;
 
   constructor(details: InfrastructureErrorDetails) {
-    const lines = [
-      `${classificationMarker(details.classification)} ${details.summary}`,
-      ...(details.url ? [`URL: ${details.url}`] : []),
-      ...details.evidence.map((item) => `Evidence: ${item}`),
-      'This is an external infrastructure failure: the test is reported as FAILED and is not retried specially.',
-    ];
-    super(lines.join('\n'));
-    this.classification = details.classification;
-    this.evidence = Object.freeze([...details.evidence]);
+    super({
+      classification: details.classification,
+      summary: details.summary,
+      context: { URL: details.url, ...details.context },
+      evidence: details.evidence,
+      note: NOTE,
+      cause: details.cause,
+    });
     this.url = details.url;
   }
 }

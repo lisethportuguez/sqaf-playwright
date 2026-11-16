@@ -5,6 +5,7 @@ import FailureClassificationReporter, {
   renderStepSummary,
   type FailureClassificationReport,
 } from '../../../src/reporting/failure-classification-reporter';
+import { emptyClassificationCounts } from '../../../src/errors/failure-classification';
 import { readJson, runPlaywright } from '../support/run-playwright';
 
 /**
@@ -65,7 +66,8 @@ test('classifies failures without changing statuses or the exit code', async ({}
   expect(report.runStatus).toBe('failed');
   expect(report.totals).toEqual({
     failedAttempts: 3,
-    byClassification: { 'infrastructure/anti-bot-challenge': 2, unclassified: 1 },
+    // Stage 5 taxonomy: the ordinary `expect(2).toBe(3)` sample is now assertion/mismatch.
+    byClassification: { ...emptyClassificationCounts(), 'infrastructure/anti-bot-challenge': 2, 'assertion/mismatch': 1 },
   });
   const byTest = Object.fromEntries(report.failures.map((f) => [f.test.split(' › ').at(-1), f]));
   expect(byTest['simulated baseline assertion on the challenge page']?.classification).toBe(
@@ -74,7 +76,7 @@ test('classifies failures without changing statuses or the exit code', async ({}
   expect(byTest['SQAF guard raises InfrastructureError on the challenge page']?.classification).toBe(
     'infrastructure/anti-bot-challenge',
   );
-  expect(byTest['ordinary assertion failure']?.classification).toBe('unclassified');
+  expect(byTest['ordinary assertion failure']?.classification).toBe('assertion/mismatch');
   for (const failure of report.failures) {
     expect(failure.status).toBe('failed');
     expect(failure.file).not.toMatch(/^[A-Za-z]:|^\//); // relative paths only
@@ -82,7 +84,8 @@ test('classifies failures without changing statuses or the exit code', async ({}
 
   // Console and GitHub job summary.
   expect(run.stdout).toContain('[SQAF] Failure classification: 3 failed attempt(s)');
-  expect(run.stdout).toContain('2 infrastructure/anti-bot-challenge, 1 unclassified');
+  expect(run.stdout).toContain('2 infrastructure/anti-bot-challenge, 1 assertion/mismatch');
+  expect(run.stdout).not.toContain('0 infrastructure/network'); // only non-zero counts are printed
   const summary = readFileSync(paths.summary, 'utf8');
   expect(summary).toContain('### SQAF failure classification');
   expect(summary).toContain('| `infrastructure/anti-bot-challenge` | 2 |');
@@ -124,12 +127,12 @@ test('onEnd returns nothing, so it can never override the run status', async ({}
 
 test('renders a job summary for a run without failures', () => {
   const markdown = renderStepSummary({
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: '2026-11-15T00:00:00.000Z',
     runStatus: 'passed',
     projects: ['baseline'],
     note: 'n',
-    totals: { failedAttempts: 0, byClassification: { 'infrastructure/anti-bot-challenge': 0, unclassified: 0 } },
+    totals: { failedAttempts: 0, byClassification: emptyClassificationCounts() },
     failures: [],
   });
   expect(markdown).toContain('### SQAF failure classification (baseline)');
