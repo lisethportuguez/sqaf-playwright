@@ -203,9 +203,9 @@ Playwright traces store form bodies and typed values, so these tests run without
 
 ## Reporting
 
-Playwright's HTML report is generated in `playwright-report/` (not versioned). In CI it is uploaded as a workflow artifact.
+Playwright's HTML report is generated in `playwright-report/` (not versioned). In CI, only the **integration** HTML report is uploaded as a workflow artifact. The baseline HTML report is generated but never published, because it records typed values such as the baseline's test password ([INC-2026-11-16](docs/security/INC-2026-11-16-baseline-report-credentials.md)). The baseline publishes its failure classification JSON instead.
 
-Every failed attempt is also classified by an observer reporter and written to the console, to `reports/failure-classification.json` and, in CI, to the job summary. Since Stage 5 the taxonomy is:
+Every failed attempt is also classified by an observer reporter and written to the console, to `reports/failure-classification.json` and, in CI, to the job summary. The error excerpt stored in that JSON is redacted (typed values and secret-looking pairs). Since Stage 5 the taxonomy is:
 
 | Classification | Meaning |
 |---|---|
@@ -226,7 +226,7 @@ Multi-format reporting and a custom metrics reporter are planned for Stage 6.
 
 The [CI workflow](.github/workflows/ci.yml) runs on push to `main`, on pull requests and on manual dispatch:
 
-`checkout → setup Node (.nvmrc) → npm ci → typecheck → unit tests → install Chromium → baseline (1 worker) → upload HTML report (+ failure evidence on failure) → integration tests → upload integration report (+ integration failure evidence on failure)`
+`checkout → setup Node (.nvmrc) → npm ci → typecheck → unit tests → install Chromium → baseline (1 worker) → upload baseline classification JSON (+ failure evidence without baseline outputs, on failure) → integration tests → upload integration report (+ integration failure evidence on failure)`
 
 The integration tests run after the baseline and its evidence upload, so they never affect the baseline run. They have their own output folders and artifacts.
 
@@ -271,6 +271,7 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 - Advertising hosts are blocked during test execution, so tests do not reproduce the exact ad-supported user experience.
 - Only Chromium is used so far; Firefox and WebKit projects are defined but have no tests until Stage 4.
 - Account confirmation pages, logout and account deletion through the UI are implemented but not yet exercised against the SUT (Stage 4). Since Stage 3, two integration tests create one synthetic account each through the API and delete it in the same run.
+- The baseline HTML report is not published in CI, so a baseline failure in CI is diagnosed from the console log, the job summary and the classification JSON; detailed diagnosis means reproducing it locally. If the baseline's `fill(password)` failed after locating its field, Playwright would print the typed value in the CI console log (see [INC-2026-11-16](docs/security/INC-2026-11-16-baseline-report-credentials.md)).
 - Tests that handle account credentials run without trace or video (screenshots are kept on failure), so their failures are harder to diagnose than those of other tests. Suites must not assert on a password value: the failed step message would end up in the HTML report.
 - The SUT is served through Cloudflare and may answer CI runners with an anti-bot challenge page. Such failures are detected and classified as infrastructure failures, but they still fail the run: SQAF does not try to bypass the challenge.
 

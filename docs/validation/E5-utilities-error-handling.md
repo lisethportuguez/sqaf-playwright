@@ -99,6 +99,12 @@ Correcciones: `pageSnapshotSection` lee los bloques `yaml` de `# Error details` 
 
 **Pruebas de E1:** `failure-classification.spec.ts`, `failure-classification-reporter.spec.ts` y `dependency-rule.spec.ts` no cambian respecto del commit `323ee34`.
 
+### 3.7 Redacción del extracto del reporter (INC-2026-11-16)
+
+El JSON de clasificación se publica en CI, y un `fill` que falla con el campo ya localizado imprime el valor en el *call log* (comprobado en local con un servidor falso). `redactExcerpt` (ADR-0008 D13) redacta los valores tecleados, las contraseñas `Sqaf#…` de cualquier longitud y los pares secretos **antes** de recortar el extracto. La clasificación no cambia, porque usa el texto original.
+
+5 pruebas nuevas en `failure-classification-reporter.spec.ts` cubren `fill`/`type`/`pressSequentially`, las contraseñas generadas, la redacción antes del recorte, el diagnóstico ordinario intacto y el JSON final sin valores sensibles. Las expectativas existentes no cambian. La mutación que elimina la redacción se detecta. Ver [INC-2026-11-16](../security/INC-2026-11-16-baseline-report-credentials.md).
+
 ## 4. Integraciones reales
 
 E5 no contacta el SUT. La taxonomía se ejercitó con fallos reales en dos ocasiones:

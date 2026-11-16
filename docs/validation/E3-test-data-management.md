@@ -219,3 +219,17 @@ Mutaciones (aplicadas sobre copias de seguridad y revertidas):
 | `testUser` | `user-mwinvb7j-1ad016cc-2` | `deleted`, `verifiedAbsent: true` | 404 |
 
 Escaneo de todos los artefactos de esa ejecución (consola, informe HTML con sus datos comprimidos, JSON de clasificación): **0** contraseñas generadas y **0** pasos `Fill` con contraseña; ningún `trace.zip` ni video.
+
+## 10. Incidente INC-2026-11-16: credenciales en el informe HTML de la línea base
+
+Durante la revisión del CI del PR #6 se detectó que el informe HTML de la línea base E0 (publicado en todas las ejecuciones desde la Etapa 1) contenía el valor tecleado por `fill(password)` en TC1. El detalle completo está en [INC-2026-11-16](../security/INC-2026-11-16-baseline-report-credentials.md).
+
+| Aspecto | Resultado |
+|---|---|
+| Cuentas de TC1 de los 11 artefactos afectados | 11/11 inexistentes (API 14, `responseCode 404`, solo lectura) |
+| Artefactos retirados | 11 informes `playwright-report-*` eliminados (runs y logs conservados). 1 artefacto del PR #6 pendiente de autorización |
+| Corrección | CI publica solo el JSON de clasificación de la línea base, y la evidencia de fallo excluye sus salidas (`b977401`). El extracto de error del JSON se redacta (ADR-0008 D13) |
+| Archivos de E0 | `baseline/baseline.spec.ts`, `config/evidence.ts` y `playwright.config.ts` sin cambios (SHA-256 iguales a `main`) |
+| Pruebas locales | Typecheck; 238/238 unitarias; 4/4 mutaciones; contrato de seguridad 3/3; sonda de `fill` fallido redactada; línea base 5/5 con la cuenta de TC1 eliminada (404) |
+| CI (`43798520805`) | Éxito: 238 unitarias, línea base 5/5, integración 30/30. Artefactos: `baseline-classification-43798520805-1` e `integration-report-43798520805-1`, sin ningún `playwright-report-*` y con 0 contraseñas |
+| Riesgo residual | Un fallo dentro del `fill(password)` de TC1, con el campo ya localizado, imprimiría el valor en la consola de CI (procedimiento en el incidente, §7) |
