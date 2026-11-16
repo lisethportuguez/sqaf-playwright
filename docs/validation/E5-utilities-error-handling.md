@@ -105,6 +105,30 @@ El JSON de clasificación se publica en CI, y un `fill` que falla con el campo y
 
 5 pruebas nuevas en `failure-classification-reporter.spec.ts` cubren `fill`/`type`/`pressSequentially`, las contraseñas generadas, la redacción antes del recorte, el diagnóstico ordinario intacto y el JSON final sin valores sensibles. Las expectativas existentes no cambian. La mutación que elimina la redacción se detecta. Ver [INC-2026-11-16](../security/INC-2026-11-16-baseline-report-credentials.md).
 
+### 3.8 Evidencia HTTP estructurada: caso "queue full" (ADR-0008 D14)
+
+**Observación en CI.** Run `43799046248` (PR #6): el test de E2 `auth.spec.ts` › "login with invalid credentials shows the error message" falló en el primer intento y pasó en el reintento (**flaky**). La captura y la traza muestran que el SUT respondió al `POST /login` con **HTTP 503** y la página "This website is under heavy load (queue full)". El formulario sí llegó al servidor, así que `fillSecret` no es la causa. El intento se clasificó `assertion/mismatch` porque la página no tiene la frase estándar del 503.
+
+**Corrección.** La fixture automática `httpEvidence` (`src/fixtures/http-evidence.fixture.ts`) registra el código de la última respuesta de documento del frame principal y lo adjunta solo a los intentos fallidos (`sqaf-http-evidence`). El reporter lo lee (`parseHttpEvidence`) y el clasificador aplica la regla 4a: documento 5xx → `infrastructure/sut-unavailable`. No depende del texto de la página. El reporter sigue siendo solo observador y la redacción del extracto no cambia.
+
+**Reproducción controlada** (servidor local, sin SUT): `tests/integration/reporting/http-evidence.spec.ts` con las muestras `tests/unit/support/http-samples/` y el reporter real.
+
+| Muestra | Estado | Clasificación |
+|---|---|---|
+| POST de login → 503 "queue full" | failed | `infrastructure/sut-unavailable`, evidencia `main document (POST) answered HTTP 503 Service Unavailable` |
+| POST de login → 200 sin mensaje de error | failed | `assertion/mismatch` |
+| *Timeout* de localizador en página sana | failed | `automation/locator-timeout` |
+| Página sana con imagen e iframe que responden 503 | failed | `assertion/mismatch` (no hay falso positivo) |
+| Test que pasa | passed | Sin adjunto de evidencia HTTP |
+
+**Pruebas unitarias** (19 nuevas): en `taxonomy.spec.ts`, el caso "queue full" con y sin estado, los códigos 500/502/504/520/599 → `sut-unavailable`, los códigos 200/204/301/403/404/499 sin cambios, la prioridad de anti-bot, marcador SQAF y red sobre el 5xx, los *timeouts* y aserciones en página sana o 5xx, el *parser* del adjunto y la URL sin *query*. En `failure-classification-reporter.spec.ts`, el adjunto 503 y el adjunto ausente o malformado.
+
+**Mutaciones** (detectadas): regla 4a desactivada (8 unitarias y el contrato fallan); la fixture no adjunta (falla el contrato); la fixture registra cualquier respuesta o también los iframes (falla el contrato); el reporter ignora el adjunto (falla 1 unitaria).
+
+**Resultados locales:** typecheck correcto; 257/257 unitarias; contratos de CI 15/15; clasificación 67/67 (E1 + taxonomía + reporter); redacción 24/24; contratos de integración sin SUT 4/4. Las pruebas de E1 y E2 no cambian.
+
+**Limitaciones:** la línea base no usa las fixtures de SQAF, así que un 503 sin frase estándar en E0 sigue dependiendo de las reglas de texto (E0 congelada). Un fallo de una llamada de API (`request`) no pasa por esta regla: lo cubre `AccountApiClient` (`InfrastructureError`).
+
 ## 4. Integraciones reales
 
 E5 no contacta el SUT. La taxonomía se ejercitó con fallos reales en dos ocasiones:

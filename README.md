@@ -211,7 +211,7 @@ Every failed attempt is also classified by an observer reporter and written to t
 |---|---|
 | `infrastructure/anti-bot-challenge` | The SUT answered with its Cloudflare challenge page |
 | `infrastructure/network` | Network or DNS failure (`net::ERR_*`, `ECONNREFUSED`, `getaddrinfo ...`) |
-| `infrastructure/sut-unavailable` | 5xx error page or answer of the SUT |
+| `infrastructure/sut-unavailable` | The page the attempt ended on was served with HTTP 5xx (structured evidence recorded by the fixtures), or a 5xx error page/answer of the SUT |
 | `test-data/invalid` | A dataset or factory result failed its validation (`DataValidationError`) |
 | `api/request-failed` | The SUT API answered unexpectedly (`ApiError`) |
 | `automation/locator-timeout` | A Playwright action timed out waiting for a locator |
