@@ -31,7 +31,7 @@ flowchart LR
 | Capa | Responsabilidad | Ubicación | Estado |
 |---|---|---|---|
 | Configuration | Configuración centralizada: base URL, proyectos, workers, retries, evidencias, reporters, variables de entorno | `playwright.config.ts`, `config/` | **Implemented (E1)**: entornos, variables, timeouts, evidencias, firmas anti-bot y aislamiento de la línea base (ADR-0005) |
-| Test Layer | Escenarios por funcionalidad, aserciones, tags, trazabilidad | `tests/` | Planned (E4). En E2 existe `tests/integration/`, que verifica Page Objects y fixtures (no son los 15 escenarios) |
+| Test Layer | Escenarios por funcionalidad, aserciones, tags, trazabilidad | `tests/e2e/` | Implemented (E4), validado en local: 15 escenarios (E4.1 autenticación, E4.2 productos, E4.3 checkout) y medición E4.4 (3 corridas: 50/54 tests aprobados, 0 fallos funcionales, 4 fallos HTTP 503 del SUT; [summary.json](../../metrics/experiments/E4-sqaf/summary.json)). Sin CI ([ADR-0010](decisions/ADR-0010-functional-scenarios.md)). `tests/integration/` verifica Page Objects y fixtures (no son los 15 escenarios) |
 | Page Object Layer | Locators, acciones de usuario en lenguaje de negocio, componentes | `src/pages/` | **Implemented (E2)**: `BasePage`, 3 componentes y 8 páginas (ADR-0007) |
 | Fixtures Layer | Inyección de Page Objects y datos, setup y teardown, punto único de importación | `src/fixtures/` | **Implemented (E2, E3)**: bloqueo de anuncios automático, 8 fixtures de Page Objects, `userProfile`, `accountApi`, `newUserData`, `testUser` y `@sqaf/fixtures` |
 | Test Data Management | Datos externos en JSON, tipos, validación, DDT, factories y providers | `src/data/`, `test-data/` | **Implemented (E3)**: 5 datasets, esquemas sin dependencias, providers tipados y factories (ADR-0009) |
@@ -63,12 +63,17 @@ flowchart LR
     E --> U[npm run test:unit<br/>sin navegador ni SUT]
     U --> F[playwright install chromium]
     F --> G[npm run test:baseline<br/>1 worker, retries 0]
-    G --> H[upload playwright-report]
-    G -. si falla .-> I[upload failure-evidence<br/>test-results + reports]
+    G --> H[upload baseline-classification<br/>solo JSON de clasificación]
+    G -. si falla .-> I[upload failure-evidence<br/>test-results sin baseline + reports]
     H --> J[npm run test:integration<br/>Page Objects y fixtures · E2]
-    J --> K[upload integration-report]
-    J -. si falla .-> L[upload integration-failure-evidence]
+    J --> K[upload integration-summary<br/>resumen seguro · E4.5]
+    J -. si falla .-> L[upload integration-failure-evidence<br/>solo suites sin cuentas]
+    J --> M[npm run test:e2e<br/>PR: @smoke · main: suite completa · E4]
+    M --> N[upload e2e-summary<br/>resumen seguro]
+    M -. si falla .-> O[upload e2e-failure-evidence<br/>solo suites de producto]
 ```
+
+Desde E4.5 (implementado en local, sin ejecución en GitHub): el paso E2E solo publica el resumen seguro de `run-summary-reporter.ts` y, si falla, las evidencias de las suites de producto. No genera informe HTML ni JSON crudo de e2e. Desde el cierre de seguridad de E4.5, el paso de integración tampoco: el informe HTML de integración (`integration-report`) mostraba los e-mails sintéticos de las cuentas en los títulos `Fill "…"` y deja de generarse; se publica su resumen seguro y, si falla, solo las evidencias de las suites que no usan cuentas, e-mails, contraseñas ni tarjetas (ADR-0003, ADR-0010 D12). La línea base solo publica su JSON de clasificación desde INC-2026-11-16.
 
 Ver [ADR-0003](decisions/ADR-0003-ci-github-actions.md).
 
@@ -85,7 +90,7 @@ Ver [ADR-0003](decisions/ADR-0003-ci-github-actions.md).
 | `ad-blocking.ts` | Política de bloqueo de anuncios (E0, sin cambios) |
 | `index.ts` | `sqafConfig`: punto único de importación, validado e inmutable |
 
-Proyectos de Playwright: `unit` (`tests/unit`, pruebas del framework), `baseline` (`baseline/`), `integration` (`tests/integration`, Chromium, E2), y `chromium`, `firefox` y `webkit` (`tests/e2e`, vacíos hasta E4). Todos los proyectos SQAF comparten `sqafUse`. Detalle en [ADR-0005](decisions/ADR-0005-configuration-layer.md).
+Proyectos de Playwright: `unit` (`tests/unit`, pruebas del framework), `baseline` (`baseline/`), `integration` (`tests/integration`, Chromium, E2), y `chromium`, `firefox` y `webkit` (`tests/e2e`, desde E4; de momento solo se ejecuta `chromium`, con `npm run test:e2e`, ADR-0010 D9). Todos los proyectos SQAF comparten `sqafUse`. Detalle en [ADR-0005](decisions/ADR-0005-configuration-layer.md).
 
 ### 4.5 Detección y clasificación del desafío anti-bot
 
@@ -137,14 +142,23 @@ classDiagram
 | `base.page.ts` | `page` del test, `header`, `open()`, `waitUntilReady()` (`load` → guard anti-bot → `assertReady()`) |
 | `components/header.component.ts` | Enlaces Home, Products, Cart, Signup / Login, Logout, Delete Account e indicador "Logged in as" |
 | `components/product-card.component.ts` | Un producto de cualquier rejilla: nombre, precio, "View Product" y "Add to cart" (con hover) |
-| `components/cart-modal.component.ts` | Modal "Added!": "Continue Shopping" y "View Cart" |
-| `home.page.ts` | `/`. Lista cuando el título es `Automation Exercise` |
+| `components/cart-modal.component.ts` | Modal "Added!": "Continue Shopping" y "View Cart"; `CartModal.of(page)` (E4) |
+| `components/product-grid.component.ts` | (E4) Rejilla `.features_items` de `ProductCard`, compartida por la home, productos y categorías |
+| `components/category-sidebar.component.ts` | (E4) Sidebar de categorías: secciones Women/Men/Kids y `openCategory(section, name)` |
+| `category-products.page.ts` | (E4) `/category_products/<id>`: encabezado, rejilla y sidebar |
+| `home.page.ts` | `/`. Lista cuando el título es `Automation Exercise`. Desde E4: rejilla, modal y sidebar |
 | `signup-login.page.ts` | `/login`: `login(LoginCredentials)`, `startSignup(SignupIdentity)` y mensaje de error de login |
 | `account-information.page.ts` | "Enter Account Information": `fill(AccountDetails)` sin enviar; `createAccount()` (no se usa en E2) |
 | `account-created.page.ts`, `account-deleted.page.ts` | Confirmaciones `data-qa` y "Continue". Solo se llega a ellas por un flujo |
-| `products.page.ts` | `/products`: rejilla de `ProductCard`, `search(term)` y modal del carrito |
-| `product-details.page.ts` | `/product_details/<id>`: `openProduct(id)`, nombre, categoría, precio, disponibilidad, condición y marca |
-| `cart.page.ts` | `/view_cart`: filas (`itemAt`, `itemNamed`) y mensaje de carrito vacío |
+| `products.page.ts` | `/products`: rejilla de `ProductCard` (desde E4, vía `ProductGrid`), `search(term)` y modal del carrito |
+| `product-details.page.ts` | `/product_details/<id>`: `openProduct(id)`, nombre, categoría, precio, disponibilidad, condición y marca. Desde E4: cantidad y `addToCart(quantity)` |
+| `cart.page.ts` | `/view_cart`: filas (`itemAt`, `itemNamed`) y mensaje de carrito vacío. Desde E4: `removeItem(name)`, `proceedToCheckout()` y `checkoutModal` |
+| `components/cart-table.component.ts` | (E4) Filas de producto (`CartItem`), compartidas por el carrito y la revisión del checkout |
+| `components/checkout-modal.component.ts` | (E4) Modal "Register / Login" del checkout sin usuario |
+| `components/address-block.component.ts` | (E4) Dirección de entrega o facturación: encabezado y 7 líneas |
+| `checkout.page.ts` | (E4) `/checkout`: direcciones, revisión del pedido, total y `placeOrder(comment)` |
+| `payment.page.ts` | (E4) `/payment`: `pay(card)` (número y CVC con `fillSecret`) |
+| `order-placed.page.ts` | (E4) `/payment_done/<importe>`: "Order Placed!" |
 | `index.ts` | Barrel. Solo lo importa la capa de fixtures |
 
 Los Page Objects exponen `readonly Locator` y acciones de negocio. No contienen aserciones de negocio: la única excepción es `assertReady()`, que es una precondición técnica. Prioridad de localizadores: rol, label o texto, `data-qa` (`getByTestId`), y CSS solo justificado. Las decisiones y la justificación de cada selector CSS están en [ADR-0007](decisions/ADR-0007-page-objects-fixtures.md).
@@ -155,8 +169,10 @@ Los Page Objects exponen `readonly Locator` y acciones de negocio. No contienen 
 flowchart LR
     PW[Playwright<br/>browser · context · page] --> CF[context.fixture<br/>adBlocking auto]
     PW --> PF[pages.fixture<br/>homePage · signupLoginPage · accountInformationPage<br/>accountCreatedPage · accountDeletedPage · productsPage<br/>productDetailsPage · cartPage]
+    PF --> FL[flows.fixture<br/>userFlows.registerViaUi]
     CF --> IDX[index.ts<br/>mergeTests → test, expect]
-    PF --> IDX
+    FL --> IDX
+    SC[scenarios.ts<br/>catálogo de TC · scenario] --> IDX
     IDX --> S["Suites SQAF<br/>import { test, expect } from '@sqaf/fixtures'"]
 ```
 
@@ -169,6 +185,8 @@ flowchart LR
 5. Al terminar, Playwright cierra el contexto: no queda estado (cookies, carrito) para el test siguiente.
 
 `index.ts` exporta solo `test`, `expect` y los tipos de entrada (`LoginCredentials`, `SignupIdentity`, `AccountDetails`). En E3, las fixtures serán el punto donde se conecten los datos (D9).
+
+**Desde E4** ([ADR-0010](decisions/ADR-0010-functional-scenarios.md)): `flows.fixture` añade `userFlows` (flujos repetidos por tres o más escenarios, como `test.step`; hoy `registerViaUi` y `payOrder`), y `scenarios.ts` es el catálogo de los 15 casos oficiales que da a cada suite su título, etiquetas (`@regression`, `@smoke`, `@account`) y anotaciones de trazabilidad.
 
 ### 4.8 Verificación de las capas (E2)
 
@@ -251,7 +269,7 @@ flowchart LR
 2. Se crea con la API 11. Si la creación falla, se intenta borrarlo y se relanza el error original.
 3. El test lo recibe.
 4. En el teardown se borra con la API 12 (`deleted` o `not-found`, idempotente) y se verifica con la API 14 que ya no existe.
-5. Se adjunta `sqaf-account-cleanup`. Si la cuenta sigue existiendo, el test falla con un `ApiError` que incluye el e-mail.
+5. Se adjunta `sqaf-account-cleanup` (fixture, `dataId`, resultado del borrado y verificación; sin e-mail ni contraseña desde E4.5). Si la cuenta sigue existiendo, el test falla con un `ApiError` (el e-mail aparece como `[e-mail redacted]`, sin `dataId`, desde el cierre final de E4.5). Para borrarla a mano en local, el `dataId` está en el adjunto y en la anotación `sqaf-test-data`, y el e-mail es `uniqueEmail(dataId)`; CI no publica ninguno de los dos.
 
 `newUserData` hace lo mismo sin el paso 2: es para el registro por la UI, y su teardown borra la cuenta por si el test la creó.
 
@@ -296,9 +314,9 @@ El marco metodológico del TFG define un árbol de referencia plano. El reposito
 
 | Estructura metodológica | Implementación real | Etapa | Estado |
 |---|---|---|---|
-| `tests/authentication/` | `tests/e2e/authentication/` | E4 | Planned (la `testDir` de los proyectos `chromium`, `firefox` y `webkit` ya es `tests/e2e`) |
-| `tests/products/` | `tests/e2e/products/` | E4 | Planned |
-| `tests/checkout/` | `tests/e2e/checkout/` | E4 | Planned |
+| `tests/authentication/` | `tests/e2e/authentication/` | E4 | Implemented (E4.1: TC1–TC5, validado en local en Chromium) |
+| `tests/products/` | `tests/e2e/products/` | E4 | Implemented (E4.2: TC8, TC9, TC12, TC13, TC17, TC18, validado en local en Chromium) |
+| `tests/checkout/` | `tests/e2e/checkout/` | E4 | Implemented (E4.3: TC14, TC15, TC16, TC23, validado en local en Chromium) |
 | — (verificación del propio framework) | `tests/unit/`, `tests/integration/` | E1–E3, E5 | Implemented |
 | `pages/` | `src/pages/` (+ `components/`) | E2 | Validated |
 | `data/` | `test-data/` (JSON) + `src/data/` (tipos, validación, datasets, providers, factories) | E3 | Implemented (`v0.4.0`) |

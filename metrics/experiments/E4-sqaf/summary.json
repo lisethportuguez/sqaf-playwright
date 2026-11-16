@@ -1,0 +1,2112 @@
+{
+  "schemaVersion": 1,
+  "experiment": "E4-sqaf",
+  "description": "Stage 4 measurement runs of the 15 SQAF functional scenarios (18 tests: TC3 has 3 data-driven cases and TC9 has 2) on Chromium. Values extracted from the Playwright JSON reporter and the SQAF failure classification of each run. Raw reports are NOT versioned: they contain the synthetic e-mails of the test accounts in their cleanup attachments.",
+  "status": "local validation only (not CI)",
+  "conditions": {
+    "environment": "local, Windows 11, Node.js v26.13.1",
+    "project": "chromium (devices[\"Desktop Chrome\"])",
+    "command": "npx playwright test --project=chromium --workers=1 --retries=0 --reporter=list,json,html,./src/reporting/failure-classification-reporter.ts",
+    "workers": 1,
+    "retries": 0,
+    "timeouts": {
+      "testMs": 30000,
+      "checkoutScenarioTestMs": 60000,
+      "expectMs": 5000,
+      "actionMs": 10000,
+      "navigationMs": 30000
+    },
+    "evidencePolicy": "general (E1) for suites without accounts; CREDENTIAL_SAFE_EVIDENCE (no trace, no video, screenshot on failure) for the 8 suites with accounts",
+    "adBlocking": true,
+    "sut": "https://automationexercise.com (production)",
+    "code": {
+      "branch": "stage/4-functional-scenarios",
+      "baseCommit": "1788078028c183517bfcc29531bb3fe77ff5836c",
+      "uncommittedChanges": true,
+      "workingTreeFingerprint": "da5083ed297fa675",
+      "fingerprintMethod": "first 16 hex chars of sha256(git diff + contents of the untracked files, sorted by path), taken before run-1; the code did not change between runs"
+    }
+  },
+  "runs": [
+    {
+      "id": "run-1",
+      "startTime": "2026-11-16T06:26:41.073Z",
+      "durationMs": 197704,
+      "playwrightVersion": "1.65.0",
+      "stats": {
+        "expected": 17,
+        "unexpected": 1,
+        "flaky": 0,
+        "skipped": 0
+      },
+      "testsExecuted": 18,
+      "retries": 0,
+      "failures": [
+        {
+          "test": "TC14",
+          "classification": "infrastructure/sut-unavailable",
+          "evidence": [
+            "main document (POST) answered HTTP 503"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "test": "TC1",
+          "scenario": "TC1",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 18625,
+          "classification": null
+        },
+        {
+          "test": "TC2",
+          "scenario": "TC2",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 9728,
+          "classification": null
+        },
+        {
+          "test": "TC3 [unregistered-email]",
+          "scenario": "TC3",
+          "case": "unregistered-email",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 5013,
+          "classification": null
+        },
+        {
+          "test": "TC3 [unregistered-plus-address]",
+          "scenario": "TC3",
+          "case": "unregistered-plus-address",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 4681,
+          "classification": null
+        },
+        {
+          "test": "TC3 [invalid-domain]",
+          "scenario": "TC3",
+          "case": "invalid-domain",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 5105,
+          "classification": null
+        },
+        {
+          "test": "TC4",
+          "scenario": "TC4",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 10603,
+          "classification": null
+        },
+        {
+          "test": "TC5",
+          "scenario": "TC5",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 5658,
+          "classification": null
+        },
+        {
+          "test": "TC14",
+          "scenario": "TC14",
+          "case": null,
+          "status": "failed",
+          "attempts": 1,
+          "durationMs": 19145,
+          "classification": "infrastructure/sut-unavailable"
+        },
+        {
+          "test": "TC15",
+          "scenario": "TC15",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 21455,
+          "classification": null
+        },
+        {
+          "test": "TC16",
+          "scenario": "TC16",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 17900,
+          "classification": null
+        },
+        {
+          "test": "TC23",
+          "scenario": "TC23",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 21787,
+          "classification": null
+        },
+        {
+          "test": "TC8",
+          "scenario": "TC8",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 6309,
+          "classification": null
+        },
+        {
+          "test": "TC9 [jeans]",
+          "scenario": "TC9",
+          "case": "jeans",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 5701,
+          "classification": null
+        },
+        {
+          "test": "TC9 [saree]",
+          "scenario": "TC9",
+          "case": "saree",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 7942,
+          "classification": null
+        },
+        {
+          "test": "TC12",
+          "scenario": "TC12",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 9798,
+          "classification": null
+        },
+        {
+          "test": "TC13",
+          "scenario": "TC13",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 9624,
+          "classification": null
+        },
+        {
+          "test": "TC17",
+          "scenario": "TC17",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 9413,
+          "classification": null
+        },
+        {
+          "test": "TC18",
+          "scenario": "TC18",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 7185,
+          "classification": null
+        }
+      ],
+      "accounts": [
+        {
+          "scenario": "TC1",
+          "fixture": "newUserData",
+          "dataId": "cuenta-11",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC2",
+          "fixture": "testUser",
+          "dataId": "cuenta-12",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC4",
+          "fixture": "testUser",
+          "dataId": "cuenta-13",
+          "cleanupRecorded": true,
+          "deleteOutcome": "deleted",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC5",
+          "fixture": "testUser",
+          "dataId": "cuenta-14",
+          "cleanupRecorded": true,
+          "deleteOutcome": "deleted",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC14",
+          "fixture": "newUserData",
+          "dataId": "cuenta-15",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "failed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC15",
+          "fixture": "newUserData",
+          "dataId": "cuenta-16",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC16",
+          "fixture": "testUser",
+          "dataId": "cuenta-17",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC23",
+          "fixture": "newUserData",
+          "dataId": "cuenta-18",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        }
+      ],
+      "artifactScan": {
+        "entries": 24,
+        "byExtension": {
+          ".md": 2,
+          ".png": 2,
+          ".json": 19,
+          ".html": 1
+        },
+        "generatedPasswords": 0,
+        "cardNumber": 0,
+        "passwordPairs": {
+          "total": 0,
+          "sourceCode": 0,
+          "other": 0
+        },
+        "traces": 0,
+        "videos": 0,
+        "screenshots": 1
+      }
+    },
+    {
+      "id": "run-2",
+      "startTime": "2026-11-16T06:30:14.506Z",
+      "durationMs": 211680,
+      "playwrightVersion": "1.65.0",
+      "stats": {
+        "expected": 17,
+        "unexpected": 1,
+        "flaky": 0,
+        "skipped": 0
+      },
+      "testsExecuted": 18,
+      "retries": 0,
+      "failures": [
+        {
+          "test": "TC1",
+          "classification": "infrastructure/sut-unavailable",
+          "evidence": [
+            "main document (POST) answered HTTP 503"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "test": "TC1",
+          "scenario": "TC1",
+          "case": null,
+          "status": "failed",
+          "attempts": 1,
+          "durationMs": 13919,
+          "classification": "infrastructure/sut-unavailable"
+        },
+        {
+          "test": "TC2",
+          "scenario": "TC2",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 13104,
+          "classification": null
+        },
+        {
+          "test": "TC3 [unregistered-email]",
+          "scenario": "TC3",
+          "case": "unregistered-email",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 5735,
+          "classification": null
+        },
+        {
+          "test": "TC3 [unregistered-plus-address]",
+          "scenario": "TC3",
+          "case": "unregistered-plus-address",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 5900,
+          "classification": null
+        },
+        {
+          "test": "TC3 [invalid-domain]",
+          "scenario": "TC3",
+          "case": "invalid-domain",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 5390,
+          "classification": null
+        },
+        {
+          "test": "TC4",
+          "scenario": "TC4",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 13940,
+          "classification": null
+        },
+        {
+          "test": "TC5",
+          "scenario": "TC5",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 6591,
+          "classification": null
+        },
+        {
+          "test": "TC14",
+          "scenario": "TC14",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 23631,
+          "classification": null
+        },
+        {
+          "test": "TC15",
+          "scenario": "TC15",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 27783,
+          "classification": null
+        },
+        {
+          "test": "TC16",
+          "scenario": "TC16",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 18388,
+          "classification": null
+        },
+        {
+          "test": "TC23",
+          "scenario": "TC23",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 20852,
+          "classification": null
+        },
+        {
+          "test": "TC8",
+          "scenario": "TC8",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 7810,
+          "classification": null
+        },
+        {
+          "test": "TC9 [jeans]",
+          "scenario": "TC9",
+          "case": "jeans",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 7414,
+          "classification": null
+        },
+        {
+          "test": "TC9 [saree]",
+          "scenario": "TC9",
+          "case": "saree",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 6359,
+          "classification": null
+        },
+        {
+          "test": "TC12",
+          "scenario": "TC12",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 10194,
+          "classification": null
+        },
+        {
+          "test": "TC13",
+          "scenario": "TC13",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 6605,
+          "classification": null
+        },
+        {
+          "test": "TC17",
+          "scenario": "TC17",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 7039,
+          "classification": null
+        },
+        {
+          "test": "TC18",
+          "scenario": "TC18",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 8992,
+          "classification": null
+        }
+      ],
+      "accounts": [
+        {
+          "scenario": "TC1",
+          "fixture": "newUserData",
+          "dataId": "cuenta-19",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "failed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC2",
+          "fixture": "testUser",
+          "dataId": "cuenta-20",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC4",
+          "fixture": "testUser",
+          "dataId": "cuenta-21",
+          "cleanupRecorded": true,
+          "deleteOutcome": "deleted",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC5",
+          "fixture": "testUser",
+          "dataId": "cuenta-22",
+          "cleanupRecorded": true,
+          "deleteOutcome": "deleted",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC14",
+          "fixture": "newUserData",
+          "dataId": "cuenta-23",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC15",
+          "fixture": "newUserData",
+          "dataId": "cuenta-24",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC16",
+          "fixture": "testUser",
+          "dataId": "cuenta-25",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC23",
+          "fixture": "newUserData",
+          "dataId": "cuenta-26",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        }
+      ],
+      "artifactScan": {
+        "entries": 24,
+        "byExtension": {
+          ".png": 2,
+          ".md": 2,
+          ".json": 19,
+          ".html": 1
+        },
+        "generatedPasswords": 0,
+        "cardNumber": 0,
+        "passwordPairs": {
+          "total": 0,
+          "sourceCode": 0,
+          "other": 0
+        },
+        "traces": 0,
+        "videos": 0,
+        "screenshots": 1
+      }
+    },
+    {
+      "id": "run-3",
+      "startTime": "2026-11-16T06:33:54.840Z",
+      "durationMs": 196811,
+      "playwrightVersion": "1.65.0",
+      "stats": {
+        "expected": 16,
+        "unexpected": 2,
+        "flaky": 0,
+        "skipped": 0
+      },
+      "testsExecuted": 18,
+      "retries": 0,
+      "failures": [
+        {
+          "test": "TC15",
+          "classification": "infrastructure/sut-unavailable",
+          "evidence": [
+            "main document (POST) answered HTTP 503"
+          ]
+        },
+        {
+          "test": "TC8",
+          "classification": "infrastructure/sut-unavailable",
+          "evidence": [
+            "main document (GET) answered HTTP 503"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "test": "TC1",
+          "scenario": "TC1",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 14117,
+          "classification": null
+        },
+        {
+          "test": "TC2",
+          "scenario": "TC2",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 8806,
+          "classification": null
+        },
+        {
+          "test": "TC3 [unregistered-email]",
+          "scenario": "TC3",
+          "case": "unregistered-email",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 4694,
+          "classification": null
+        },
+        {
+          "test": "TC3 [unregistered-plus-address]",
+          "scenario": "TC3",
+          "case": "unregistered-plus-address",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 5438,
+          "classification": null
+        },
+        {
+          "test": "TC3 [invalid-domain]",
+          "scenario": "TC3",
+          "case": "invalid-domain",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 3489,
+          "classification": null
+        },
+        {
+          "test": "TC4",
+          "scenario": "TC4",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 11167,
+          "classification": null
+        },
+        {
+          "test": "TC5",
+          "scenario": "TC5",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 8794,
+          "classification": null
+        },
+        {
+          "test": "TC14",
+          "scenario": "TC14",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 26104,
+          "classification": null
+        },
+        {
+          "test": "TC15",
+          "scenario": "TC15",
+          "case": null,
+          "status": "failed",
+          "attempts": 1,
+          "durationMs": 24818,
+          "classification": "infrastructure/sut-unavailable"
+        },
+        {
+          "test": "TC16",
+          "scenario": "TC16",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 20739,
+          "classification": null
+        },
+        {
+          "test": "TC23",
+          "scenario": "TC23",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 18066,
+          "classification": null
+        },
+        {
+          "test": "TC8",
+          "scenario": "TC8",
+          "case": null,
+          "status": "failed",
+          "attempts": 1,
+          "durationMs": 8687,
+          "classification": "infrastructure/sut-unavailable"
+        },
+        {
+          "test": "TC9 [jeans]",
+          "scenario": "TC9",
+          "case": "jeans",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 10038,
+          "classification": null
+        },
+        {
+          "test": "TC9 [saree]",
+          "scenario": "TC9",
+          "case": "saree",
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 8555,
+          "classification": null
+        },
+        {
+          "test": "TC12",
+          "scenario": "TC12",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 6531,
+          "classification": null
+        },
+        {
+          "test": "TC13",
+          "scenario": "TC13",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 4970,
+          "classification": null
+        },
+        {
+          "test": "TC17",
+          "scenario": "TC17",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 4437,
+          "classification": null
+        },
+        {
+          "test": "TC18",
+          "scenario": "TC18",
+          "case": null,
+          "status": "passed",
+          "attempts": 1,
+          "durationMs": 4704,
+          "classification": null
+        }
+      ],
+      "accounts": [
+        {
+          "scenario": "TC1",
+          "fixture": "newUserData",
+          "dataId": "cuenta-27",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC2",
+          "fixture": "testUser",
+          "dataId": "cuenta-28",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC4",
+          "fixture": "testUser",
+          "dataId": "cuenta-29",
+          "cleanupRecorded": true,
+          "deleteOutcome": "deleted",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC5",
+          "fixture": "testUser",
+          "dataId": "cuenta-30",
+          "cleanupRecorded": true,
+          "deleteOutcome": "deleted",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC14",
+          "fixture": "newUserData",
+          "dataId": "cuenta-31",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC15",
+          "fixture": "newUserData",
+          "dataId": "cuenta-32",
+          "cleanupRecorded": true,
+          "deleteOutcome": "deleted",
+          "verifiedAbsent": true,
+          "testStatus": "failed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC16",
+          "fixture": "testUser",
+          "dataId": "cuenta-33",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        },
+        {
+          "scenario": "TC23",
+          "fixture": "newUserData",
+          "dataId": "cuenta-34",
+          "cleanupRecorded": true,
+          "deleteOutcome": "not-found",
+          "verifiedAbsent": true,
+          "testStatus": "passed",
+          "api14": {
+            "httpStatus": 200,
+            "responseCode": 404
+          }
+        }
+      ],
+      "artifactScan": {
+        "entries": 252,
+        "byExtension": {
+          ".ts": 22,
+          "(none)": 6,
+          ".trace": 6,
+          ".network": 4,
+          ".jpeg": 58,
+          ".html": 8,
+          ".css": 21,
+          ".png": 5,
+          ".jpg": 74,
+          ".woff": 2,
+          ".woff2": 2,
+          ".json": 23,
+          ".txt": 2,
+          ".stacks": 4,
+          ".md": 4,
+          ".js": 8,
+          ".ttf": 1,
+          ".webmanifest": 1,
+          ".svg": 1
+        },
+        "generatedPasswords": 0,
+        "cardNumber": 0,
+        "passwordPairs": {
+          "total": 0,
+          "sourceCode": 0,
+          "other": 0
+        },
+        "traces": 1,
+        "videos": 0,
+        "screenshots": 2
+      }
+    }
+  ],
+  "aggregate": {
+    "runs": 3,
+    "runDuration": {
+      "n": 3,
+      "meanMs": 202065,
+      "minMs": 196811,
+      "maxMs": 211680
+    },
+    "testExecutions": 54,
+    "passed": 50,
+    "failed": 4,
+    "infrastructureFailures": 4,
+    "functionalFailures": 0,
+    "retries": 0,
+    "flaky": 0,
+    "observedPassRate": 0.9259,
+    "infrastructureFailureRate": 0.0741,
+    "functionalFailureRate": 0,
+    "passRateExcludingInfrastructure": {
+      "value": 1,
+      "criterion": "passed / (executions - executions failed with an infrastructure/* classification). It is NOT the observed pass rate: it only says that no execution unaffected by the SUT failed. The infrastructure failures stay in every other figure."
+    },
+    "scenarioLevel": {
+      "scenarioRuns": 45,
+      "scenarioRunsPassed": 41,
+      "scenarioRunsFailedByInfrastructure": 4,
+      "scenariosPassingAllRuns": 11,
+      "scenariosWithAtLeastOneFailure": [
+        "TC1",
+        "TC14",
+        "TC15",
+        "TC8"
+      ],
+      "note": "A scenario run passes when every data-driven case of the scenario passes in that run (TC3 has 3 cases, TC9 has 2)."
+    },
+    "stabilityAcrossRuns": "With retries 0 there can be no flaky result. Stability is measured across runs: a scenario is stable when it passes in the 3 runs.",
+    "accounts": {
+      "fixtureInstances": 24,
+      "cleanupRecorded": 24,
+      "verifiedAbsentAutomatically": 24,
+      "deleteOutcomes": {
+        "not-found": 17,
+        "deleted": 7
+      },
+      "verifiedAbsentManually": 24,
+      "stillActive": 0,
+      "note": "fixtureInstances counts testUser/newUserData instances; an account exists in the SUT only if its creation succeeded (deleteOutcome \"deleted\" proves it existed; \"not-found\" means it was deleted through the UI or never created). The manual verification is API 14 (read-only) after the 3 runs."
+    }
+  },
+  "perTest": [
+    {
+      "test": "TC1",
+      "executions": 3,
+      "passed": 2,
+      "infrastructureFailures": 1,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "failed (infrastructure/sut-unavailable)",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 15554,
+        "minMs": 13919,
+        "maxMs": 18625
+      },
+      "durationPassed": {
+        "n": 2,
+        "meanMs": 16371,
+        "minMs": 14117,
+        "maxMs": 18625
+      }
+    },
+    {
+      "test": "TC2",
+      "executions": 3,
+      "passed": 3,
+      "infrastructureFailures": 0,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 10546,
+        "minMs": 8806,
+        "maxMs": 13104
+      },
+      "durationPassed": {
+        "n": 3,
+        "meanMs": 10546,
+        "minMs": 8806,
+        "maxMs": 13104
+      }
+    },
+    {
+      "test": "TC3 [unregistered-email]",
+      "executions": 3,
+      "passed": 3,
+      "infrastructureFailures": 0,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 5147,
+        "minMs": 4694,
+        "maxMs": 5735
+      },
+      "durationPassed": {
+        "n": 3,
+        "meanMs": 5147,
+        "minMs": 4694,
+        "maxMs": 5735
+      }
+    },
+    {
+      "test": "TC3 [unregistered-plus-address]",
+      "executions": 3,
+      "passed": 3,
+      "infrastructureFailures": 0,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 5340,
+        "minMs": 4681,
+        "maxMs": 5900
+      },
+      "durationPassed": {
+        "n": 3,
+        "meanMs": 5340,
+        "minMs": 4681,
+        "maxMs": 5900
+      }
+    },
+    {
+      "test": "TC3 [invalid-domain]",
+      "executions": 3,
+      "passed": 3,
+      "infrastructureFailures": 0,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 4661,
+        "minMs": 3489,
+        "maxMs": 5390
+      },
+      "durationPassed": {
+        "n": 3,
+        "meanMs": 4661,
+        "minMs": 3489,
+        "maxMs": 5390
+      }
+    },
+    {
+      "test": "TC4",
+      "executions": 3,
+      "passed": 3,
+      "infrastructureFailures": 0,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 11903,
+        "minMs": 10603,
+        "maxMs": 13940
+      },
+      "durationPassed": {
+        "n": 3,
+        "meanMs": 11903,
+        "minMs": 10603,
+        "maxMs": 13940
+      }
+    },
+    {
+      "test": "TC5",
+      "executions": 3,
+      "passed": 3,
+      "infrastructureFailures": 0,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 7014,
+        "minMs": 5658,
+        "maxMs": 8794
+      },
+      "durationPassed": {
+        "n": 3,
+        "meanMs": 7014,
+        "minMs": 5658,
+        "maxMs": 8794
+      }
+    },
+    {
+      "test": "TC14",
+      "executions": 3,
+      "passed": 2,
+      "infrastructureFailures": 1,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "failed (infrastructure/sut-unavailable)",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 22960,
+        "minMs": 19145,
+        "maxMs": 26104
+      },
+      "durationPassed": {
+        "n": 2,
+        "meanMs": 24868,
+        "minMs": 23631,
+        "maxMs": 26104
+      }
+    },
+    {
+      "test": "TC15",
+      "executions": 3,
+      "passed": 2,
+      "infrastructureFailures": 1,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "failed (infrastructure/sut-unavailable)"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 24685,
+        "minMs": 21455,
+        "maxMs": 27783
+      },
+      "durationPassed": {
+        "n": 2,
+        "meanMs": 24619,
+        "minMs": 21455,
+        "maxMs": 27783
+      }
+    },
+    {
+      "test": "TC16",
+      "executions": 3,
+      "passed": 3,
+      "infrastructureFailures": 0,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 19009,
+        "minMs": 17900,
+        "maxMs": 20739
+      },
+      "durationPassed": {
+        "n": 3,
+        "meanMs": 19009,
+        "minMs": 17900,
+        "maxMs": 20739
+      }
+    },
+    {
+      "test": "TC23",
+      "executions": 3,
+      "passed": 3,
+      "infrastructureFailures": 0,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 20235,
+        "minMs": 18066,
+        "maxMs": 21787
+      },
+      "durationPassed": {
+        "n": 3,
+        "meanMs": 20235,
+        "minMs": 18066,
+        "maxMs": 21787
+      }
+    },
+    {
+      "test": "TC8",
+      "executions": 3,
+      "passed": 2,
+      "infrastructureFailures": 1,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "failed (infrastructure/sut-unavailable)"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 7602,
+        "minMs": 6309,
+        "maxMs": 8687
+      },
+      "durationPassed": {
+        "n": 2,
+        "meanMs": 7060,
+        "minMs": 6309,
+        "maxMs": 7810
+      }
+    },
+    {
+      "test": "TC9 [jeans]",
+      "executions": 3,
+      "passed": 3,
+      "infrastructureFailures": 0,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 7718,
+        "minMs": 5701,
+        "maxMs": 10038
+      },
+      "durationPassed": {
+        "n": 3,
+        "meanMs": 7718,
+        "minMs": 5701,
+        "maxMs": 10038
+      }
+    },
+    {
+      "test": "TC9 [saree]",
+      "executions": 3,
+      "passed": 3,
+      "infrastructureFailures": 0,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 7619,
+        "minMs": 6359,
+        "maxMs": 8555
+      },
+      "durationPassed": {
+        "n": 3,
+        "meanMs": 7619,
+        "minMs": 6359,
+        "maxMs": 8555
+      }
+    },
+    {
+      "test": "TC12",
+      "executions": 3,
+      "passed": 3,
+      "infrastructureFailures": 0,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 8841,
+        "minMs": 6531,
+        "maxMs": 10194
+      },
+      "durationPassed": {
+        "n": 3,
+        "meanMs": 8841,
+        "minMs": 6531,
+        "maxMs": 10194
+      }
+    },
+    {
+      "test": "TC13",
+      "executions": 3,
+      "passed": 3,
+      "infrastructureFailures": 0,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 7066,
+        "minMs": 4970,
+        "maxMs": 9624
+      },
+      "durationPassed": {
+        "n": 3,
+        "meanMs": 7066,
+        "minMs": 4970,
+        "maxMs": 9624
+      }
+    },
+    {
+      "test": "TC17",
+      "executions": 3,
+      "passed": 3,
+      "infrastructureFailures": 0,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 6963,
+        "minMs": 4437,
+        "maxMs": 9413
+      },
+      "durationPassed": {
+        "n": 3,
+        "meanMs": 6963,
+        "minMs": 4437,
+        "maxMs": 9413
+      }
+    },
+    {
+      "test": "TC18",
+      "executions": 3,
+      "passed": 3,
+      "infrastructureFailures": 0,
+      "functionalFailures": 0,
+      "statusByRun": {
+        "run-1": "passed",
+        "run-2": "passed",
+        "run-3": "passed"
+      },
+      "durationAllAttempts": {
+        "n": 3,
+        "meanMs": 6960,
+        "minMs": 4704,
+        "maxMs": 8992
+      },
+      "durationPassed": {
+        "n": 3,
+        "meanMs": 6960,
+        "minMs": 4704,
+        "maxMs": 8992
+      }
+    }
+  ],
+  "e0Comparison": {
+    "method": "E0 official series 2 (run-04..run-06, 2026-11-15, baseline project) against the equivalent SQAF case of the 3 E4.4 runs. Durations of SQAF are those of PASSED executions. Conditions differ (see caveats).",
+    "caveats": [
+      "Different days and SUT load: E0 on 2026-11-15, E4.4 on 2026-11-16.",
+      "SQAF assertions are stronger (exact product values, URLs, cleanup through the API) and every page wait includes the anti-bot guard and the readiness check.",
+      "SQAF applies its evidence policy (trace retained on failure for suites without accounts); E0 records no evidence.",
+      "TC1 in SQAF also deletes the account again through the API and verifies its absence (2 extra API calls), and it is the first test of each run (it includes the browser start).",
+      "E0 has one case for TC3 and TC9; SQAF has 3 and 2 data-driven cases: only the equivalent case is compared."
+    ],
+    "pairs": [
+      {
+        "scenario": "TC1",
+        "sqafTest": "TC1",
+        "e0": {
+          "runs": 3,
+          "passed": 3,
+          "duration": {
+            "n": 3,
+            "meanMs": 6861,
+            "minMs": 6424,
+            "maxMs": 7308
+          },
+          "loc": 53,
+          "selectorCallsInTest": 30,
+          "cssLiteralsInTest": 25
+        },
+        "sqaf": {
+          "runs": 3,
+          "passed": 2,
+          "infrastructureFailures": 1,
+          "durationPassed": {
+            "n": 2,
+            "meanMs": 16371,
+            "minMs": 14117,
+            "maxMs": 18625
+          },
+          "loc": 21,
+          "selectorCallsInSpec": 0,
+          "cssLiteralsInSpec": 0,
+          "pageObjectMembersUsed": 10
+        },
+        "meanDurationRatio": 2.39
+      },
+      {
+        "scenario": "TC3",
+        "sqafTest": "TC3 [unregistered-email]",
+        "e0": {
+          "runs": 3,
+          "passed": 3,
+          "duration": {
+            "n": 3,
+            "meanMs": 3679,
+            "minMs": 3410,
+            "maxMs": 3896
+          },
+          "loc": 10,
+          "selectorCallsInTest": 6,
+          "cssLiteralsInTest": 3
+        },
+        "sqaf": {
+          "runs": 3,
+          "passed": 3,
+          "infrastructureFailures": 0,
+          "durationPassed": {
+            "n": 3,
+            "meanMs": 5147,
+            "minMs": 4694,
+            "maxMs": 5735
+          },
+          "loc": 19,
+          "selectorCallsInSpec": 0,
+          "cssLiteralsInSpec": 0,
+          "pageObjectMembersUsed": 7
+        },
+        "meanDurationRatio": 1.4
+      },
+      {
+        "scenario": "TC8",
+        "sqafTest": "TC8",
+        "e0": {
+          "runs": 3,
+          "passed": 3,
+          "duration": {
+            "n": 3,
+            "meanMs": 3585,
+            "minMs": 3045,
+            "maxMs": 4396
+          },
+          "loc": 17,
+          "selectorCallsInTest": 11,
+          "cssLiteralsInTest": 2
+        },
+        "sqaf": {
+          "runs": 3,
+          "passed": 2,
+          "infrastructureFailures": 1,
+          "durationPassed": {
+            "n": 2,
+            "meanMs": 7060,
+            "minMs": 6309,
+            "maxMs": 7810
+          },
+          "loc": 29,
+          "selectorCallsInSpec": 0,
+          "cssLiteralsInSpec": 0,
+          "pageObjectMembersUsed": 14
+        },
+        "meanDurationRatio": 1.97
+      },
+      {
+        "scenario": "TC9",
+        "sqafTest": "TC9 [jeans]",
+        "e0": {
+          "runs": 3,
+          "passed": 3,
+          "duration": {
+            "n": 3,
+            "meanMs": 4430,
+            "minMs": 4232,
+            "maxMs": 4641
+          },
+          "loc": 16,
+          "selectorCallsInTest": 6,
+          "cssLiteralsInTest": 3
+        },
+        "sqaf": {
+          "runs": 3,
+          "passed": 3,
+          "infrastructureFailures": 0,
+          "durationPassed": {
+            "n": 3,
+            "meanMs": 7718,
+            "minMs": 5701,
+            "maxMs": 10038
+          },
+          "loc": 24,
+          "selectorCallsInSpec": 0,
+          "cssLiteralsInSpec": 0,
+          "pageObjectMembersUsed": 8
+        },
+        "meanDurationRatio": 1.74
+      },
+      {
+        "scenario": "TC12",
+        "sqafTest": "TC12",
+        "e0": {
+          "runs": 3,
+          "passed": 3,
+          "duration": {
+            "n": 3,
+            "meanMs": 7207,
+            "minMs": 6090,
+            "maxMs": 9351
+          },
+          "loc": 29,
+          "selectorCallsInTest": 21,
+          "cssLiteralsInTest": 13
+        },
+        "sqaf": {
+          "runs": 3,
+          "passed": 3,
+          "infrastructureFailures": 0,
+          "durationPassed": {
+            "n": 3,
+            "meanMs": 8841,
+            "minMs": 6531,
+            "maxMs": 10194
+          },
+          "loc": 40,
+          "selectorCallsInSpec": 0,
+          "cssLiteralsInSpec": 0,
+          "pageObjectMembersUsed": 12
+        },
+        "meanDurationRatio": 1.23
+      }
+    ]
+  },
+  "architecture": {
+    "method": {
+      "loc": "non-blank lines that are not // or block/JSDoc comment lines",
+      "selectorCalls": "occurrences of .locator( .getBy*( .$( .$$( in the spec text",
+      "cssLiterals": "string literals starting with #id, .class or [data-qa=",
+      "pageObjectMembersUsed": "distinct Page Object / component / flow members referenced by the spec (components such as header count once whatever page they are reached from)",
+      "reuse": "a member is reused when two or more scenarios reference it",
+      "changeImpact": "files of src/pages whose code (comments excluded) contains the selector; scenarios whose specs reach it through a Page Object member; lines of baseline.spec.ts that contain it"
+    },
+    "perSpec": [
+      {
+        "scenario": "TC1",
+        "file": "tests/e2e/authentication/tc01-register-user.spec.ts",
+        "loc": 21,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 10,
+        "flows": [
+          "registerViaUi"
+        ],
+        "fixtures": [
+          "newUserData"
+        ],
+        "datasets": [],
+        "credentialPolicy": true
+      },
+      {
+        "scenario": "TC2",
+        "file": "tests/e2e/authentication/tc02-login-user-correct.spec.ts",
+        "loc": 23,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 10,
+        "flows": [],
+        "fixtures": [
+          "testUser"
+        ],
+        "datasets": [],
+        "credentialPolicy": true
+      },
+      {
+        "scenario": "TC3",
+        "file": "tests/e2e/authentication/tc03-login-user-incorrect.spec.ts",
+        "loc": 19,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 7,
+        "flows": [],
+        "fixtures": [],
+        "datasets": [
+          "invalidCredentials"
+        ],
+        "credentialPolicy": false
+      },
+      {
+        "scenario": "TC4",
+        "file": "tests/e2e/authentication/tc04-logout-user.spec.ts",
+        "loc": 24,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 9,
+        "flows": [],
+        "fixtures": [
+          "testUser"
+        ],
+        "datasets": [],
+        "credentialPolicy": true
+      },
+      {
+        "scenario": "TC5",
+        "file": "tests/e2e/authentication/tc05-register-user-existing-email.spec.ts",
+        "loc": 20,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 8,
+        "flows": [],
+        "fixtures": [
+          "testUser"
+        ],
+        "datasets": [],
+        "credentialPolicy": true
+      },
+      {
+        "scenario": "TC14",
+        "file": "tests/e2e/checkout/tc14-place-order-register-while-checkout.spec.ts",
+        "loc": 77,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 23,
+        "flows": [
+          "registerViaUi",
+          "payOrder"
+        ],
+        "fixtures": [
+          "newUserData"
+        ],
+        "datasets": [
+          "products",
+          "paymentCards"
+        ],
+        "credentialPolicy": true
+      },
+      {
+        "scenario": "TC15",
+        "file": "tests/e2e/checkout/tc15-place-order-register-before-checkout.spec.ts",
+        "loc": 65,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 22,
+        "flows": [
+          "registerViaUi",
+          "payOrder"
+        ],
+        "fixtures": [
+          "newUserData"
+        ],
+        "datasets": [
+          "products",
+          "paymentCards"
+        ],
+        "credentialPolicy": true
+      },
+      {
+        "scenario": "TC16",
+        "file": "tests/e2e/checkout/tc16-place-order-login-before-checkout.spec.ts",
+        "loc": 72,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 25,
+        "flows": [
+          "payOrder"
+        ],
+        "fixtures": [
+          "testUser"
+        ],
+        "datasets": [
+          "products",
+          "paymentCards"
+        ],
+        "credentialPolicy": true
+      },
+      {
+        "scenario": "TC23",
+        "file": "tests/e2e/checkout/tc23-verify-address-details-in-checkout.spec.ts",
+        "loc": 48,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 19,
+        "flows": [
+          "registerViaUi"
+        ],
+        "fixtures": [
+          "newUserData"
+        ],
+        "datasets": [
+          "products"
+        ],
+        "credentialPolicy": true
+      },
+      {
+        "scenario": "TC8",
+        "file": "tests/e2e/products/tc08-verify-all-products-and-detail.spec.ts",
+        "loc": 29,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 14,
+        "flows": [],
+        "fixtures": [],
+        "datasets": [
+          "products"
+        ],
+        "credentialPolicy": false
+      },
+      {
+        "scenario": "TC9",
+        "file": "tests/e2e/products/tc09-search-product.spec.ts",
+        "loc": 24,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 8,
+        "flows": [],
+        "fixtures": [],
+        "datasets": [
+          "productSearches"
+        ],
+        "credentialPolicy": false
+      },
+      {
+        "scenario": "TC12",
+        "file": "tests/e2e/products/tc12-add-products-in-cart.spec.ts",
+        "loc": 40,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 12,
+        "flows": [],
+        "fixtures": [],
+        "datasets": [
+          "products"
+        ],
+        "credentialPolicy": false
+      },
+      {
+        "scenario": "TC13",
+        "file": "tests/e2e/products/tc13-verify-product-quantity-in-cart.spec.ts",
+        "loc": 29,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 11,
+        "flows": [],
+        "fixtures": [],
+        "datasets": [
+          "products"
+        ],
+        "credentialPolicy": false
+      },
+      {
+        "scenario": "TC17",
+        "file": "tests/e2e/products/tc17-remove-products-from-cart.spec.ts",
+        "loc": 32,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 11,
+        "flows": [],
+        "fixtures": [],
+        "datasets": [
+          "products"
+        ],
+        "credentialPolicy": false
+      },
+      {
+        "scenario": "TC18",
+        "file": "tests/e2e/products/tc18-view-category-products.spec.ts",
+        "loc": 30,
+        "selectorCalls": 0,
+        "cssLiterals": 0,
+        "pageObjectMembersUsed": 9,
+        "flows": [],
+        "fixtures": [],
+        "datasets": [
+          "productCategories"
+        ],
+        "credentialPolicy": false
+      }
+    ],
+    "totals": {
+      "specs": 15,
+      "loc": 553,
+      "selectorCalls": 0,
+      "cssLiterals": 0,
+      "distinctMembers": 69,
+      "reusedMembers": 36,
+      "reuseRatio": 0.522,
+      "specsUsingFlows": 5,
+      "specsWithCredentialPolicy": 8,
+      "specsWithAccountFixtures": 8
+    },
+    "topMembers": [
+      [
+        "homePage.open",
+        15
+      ],
+      [
+        "header.goToSignupLogin",
+        8
+      ],
+      [
+        "cartModal.confirmationMessage",
+        7
+      ],
+      [
+        "cartPage.waitUntilReady",
+        7
+      ],
+      [
+        "productGrid.productNamed",
+        7
+      ],
+      [
+        "accountDeletedPage.confirmation",
+        6
+      ],
+      [
+        "accountDeletedPage.waitUntilReady",
+        6
+      ],
+      [
+        "cartModal.continueShopping",
+        6
+      ],
+      [
+        "cartModal.root",
+        6
+      ],
+      [
+        "cartPage.itemRows",
+        6
+      ],
+      [
+        "header.deleteAccount",
+        6
+      ],
+      [
+        "header.loggedInUser",
+        6
+      ]
+    ],
+    "baseline": {
+      "headerLoc": 6,
+      "perScenario": [
+        {
+          "scenario": "TC1",
+          "loc": 53,
+          "selectorCalls": 30,
+          "cssLiterals": 25
+        },
+        {
+          "scenario": "TC3",
+          "loc": 10,
+          "selectorCalls": 6,
+          "cssLiterals": 3
+        },
+        {
+          "scenario": "TC8",
+          "loc": 17,
+          "selectorCalls": 11,
+          "cssLiterals": 2
+        },
+        {
+          "scenario": "TC9",
+          "loc": 16,
+          "selectorCalls": 6,
+          "cssLiterals": 3
+        },
+        {
+          "scenario": "TC12",
+          "loc": 29,
+          "selectorCalls": 21,
+          "cssLiterals": 13
+        }
+      ]
+    },
+    "changeImpact": [
+      {
+        "change": "\"Signup / Login\" header link",
+        "sqafFilesToEdit": [
+          "src/pages/components/header.component.ts"
+        ],
+        "sqafSpecsToEdit": 0,
+        "sqafScenariosCovered": [
+          "TC1",
+          "TC15",
+          "TC16",
+          "TC2",
+          "TC23",
+          "TC3",
+          "TC4",
+          "TC5"
+        ],
+        "baselineLinesToEdit": 2
+      },
+      {
+        "change": "login e-mail field (data-qa=\"login-email\")",
+        "sqafFilesToEdit": [
+          "src/pages/signup-login.page.ts"
+        ],
+        "sqafSpecsToEdit": 0,
+        "sqafScenariosCovered": [
+          "TC16",
+          "TC2",
+          "TC3",
+          "TC4"
+        ],
+        "baselineLinesToEdit": 1
+      },
+      {
+        "change": "\"Add to cart\" of a product card",
+        "sqafFilesToEdit": [
+          "src/pages/components/product-card.component.ts",
+          "src/pages/product-details.page.ts"
+        ],
+        "sqafSpecsToEdit": 0,
+        "sqafScenariosCovered": [
+          "TC13"
+        ],
+        "baselineLinesToEdit": 3
+      },
+      {
+        "change": "product grid (.features_items .product-image-wrapper)",
+        "sqafFilesToEdit": [
+          "src/pages/components/product-grid.component.ts"
+        ],
+        "sqafSpecsToEdit": 0,
+        "sqafScenariosCovered": [
+          "TC12",
+          "TC13",
+          "TC14",
+          "TC15",
+          "TC16",
+          "TC17",
+          "TC18",
+          "TC23",
+          "TC8",
+          "TC9"
+        ],
+        "baselineLinesToEdit": 2
+      },
+      {
+        "change": "\"Delete Account\" header link",
+        "sqafFilesToEdit": [
+          "src/pages/components/header.component.ts"
+        ],
+        "sqafSpecsToEdit": 0,
+        "sqafScenariosCovered": [
+          "TC1",
+          "TC14",
+          "TC15",
+          "TC16",
+          "TC2",
+          "TC23"
+        ],
+        "baselineLinesToEdit": 1
+      }
+    ],
+    "layers": {
+      "pages": {
+        "files": 23,
+        "loc": 678
+      },
+      "fixtures": {
+        "files": 7,
+        "loc": 425
+      },
+      "data": {
+        "files": 10,
+        "loc": 550
+      },
+      "api": {
+        "files": 2,
+        "loc": 232
+      },
+      "errors": {
+        "files": 9,
+        "loc": 460
+      },
+      "utils": {
+        "files": 8,
+        "loc": 207
+      },
+      "reporting": {
+        "files": 1,
+        "loc": 170
+      },
+      "test-data": {
+        "files": 6,
+        "loc": 0
+      },
+      "e2e": {
+        "files": 15,
+        "loc": 553
+      }
+    }
+  }
+}
