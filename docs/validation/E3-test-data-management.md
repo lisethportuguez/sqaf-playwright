@@ -151,9 +151,71 @@ No hay dependencias nuevas ni cambios de versión (Node.js 26, Playwright 1.65.0
 
 | Tema | Situación |
 |---|---|
-| CI no ejecutado | La rama no se ha publicado. El paso de integración de CI pasará de 20 a 27 pruebas (17 contra el SUT, 2 cuentas por ejecución) sin cambiar `ci.yml` |
-| Trazas con secretos | Con `trace: retain-on-failure` (E1), la traza de un test fallido con cuenta contiene la contraseña aleatoria de la cuenta sintética, ya eliminada. Decisión pendiente (E6): desactivar las trazas en esas pruebas o enmascararlas |
+| CI no ejecutado | La rama no se ha publicado. El paso de integración de CI pasará de 20 a 30 pruebas (17 contra el SUT, 2 cuentas por ejecución, 3 contratos de seguridad sin SUT) sin cambiar `ci.yml` |
+| Secretos en artefactos | **Resuelto** (§9, ADR-0009 D16). Residual: una aserción sobre el valor de una contraseña dejaría el valor en el mensaje del paso; está prohibido por regla y no existe ninguna |
 | Cuenta huérfana por un fallo en el teardown | Posible si la red o el SUT fallan justo durante el borrado. El test falla de forma visible y el mensaje incluye el e-mail |
 | Fallo transitorio de DNS local | Observado una vez al arrancar 4 workers. No se añadieron reintentos: SQAF no oculta fallos de infraestructura (ADR-0006) |
 | Datos del catálogo | Tomados del SUT el 2026-11-15. Si el SUT cambia su catálogo, el DDT de búsqueda fallará como `assertion/mismatch` y habrá que actualizar el JSON con nueva evidencia |
 | Elementos aún no ejercitados contra el SUT | `createAccount()` por la UI, `AccountCreatedPage`, `AccountDeletedPage`, `logout()` y `deleteAccount()` por la UI (E4) |
+
+## 9. Ajuste de seguridad: contraseñas en los artefactos de Playwright
+
+Revisión complementaria del ciclo 1 (2026-11-15). La redacción de `SqafError` no protege los artefactos nativos de Playwright, así que se inspeccionaron todos.
+
+### 9.1 Diagnóstico (servidor local, sin SUT)
+
+Política de CI del proyecto `integration` (`trace` y `video: retain-on-failure`, `screenshot: only-on-failure`), mismo patrón que `testUser` (cuenta por API y login por la UI):
+
+| Artefacto | ¿Contenía la contraseña? | Vía |
+|---|---|---|
+| Informe HTML, test que **pasa** (se sube siempre en CI) | Sí | Título del paso `Fill "<contraseña>"` |
+| `trace.zip` | Sí | Formulario de la API (`*.network`, `resources/`), `params.value` de `fill`, valor del input en los snapshots del DOM |
+| `error-context.md` | Sí | `textbox "Password": <valor>` (snapshot de accesibilidad) |
+| Captura PNG | No | El navegador muestra puntos |
+| Video | No se espera (mismo renderizado que la captura); se desactiva igualmente |
+| Informe JSON, clasificación SQAF, consola `list` | No | — |
+
+Artefactos de CI: informe HTML de integración (siempre) y evidencias de fallo (solo si falla), 14 días; el repositorio es **público**.
+
+Mitigaciones evaluadas: `test.step(..., { box: true })` no oculta el paso `Fill`; `PLAYWRIGHT_NO_COPY_PROMPT` no afecta al snapshot de las aserciones; `video` no se puede cambiar dentro de un `describe` (fuerza otro worker).
+
+### 9.2 Solución (ADR-0009 D16)
+
+| Pieza | Archivo | Efecto |
+|---|---|---|
+| Política `CREDENTIAL_EVIDENCE` (`trace: off`, `video: off`, `screenshot: only-on-failure`) | `config/credential-evidence.ts`, `sqafConfig.credentialEvidence` | Sin traza ni video en las pruebas con credenciales |
+| `test.use(CREDENTIAL_SAFE_EVIDENCE)` | `tests/integration/data/account-api.spec.ts` | Declaración en el nivel superior del archivo |
+| Fixture `credentialGuard` | `src/fixtures/data.fixture.ts` | Rechaza la política general (`ConfigurationError`, sin crear cuentas); vacía los campos de contraseña antes del snapshot final; redacta las contraseñas en los errores del test |
+| `fillSecret` | `src/pages/components/secret-field.ts`, usado en login y alta | Mantiene las comprobaciones de `fill` (rellena vacío) y fija el valor con `evaluate`: no aparece en el título del paso |
+| `generatedPassword` y `redactSecrets` | `src/utils/unique.ts`, `src/utils/redaction.ts` | Formato fijo `Sqaf#` + 16 caracteres, reconocible por la redacción |
+
+La política general de E1 (`config/evidence.ts`), `playwright.config.ts` y `ci.yml` **no cambian**: el resto de pruebas conserva trazas, capturas y video en fallo.
+
+### 9.3 Pruebas de contrato
+
+| Archivo | Pruebas | Qué demuestra |
+|---|---|---|
+| `tests/unit/fixtures/credential-evidence.spec.ts` | 8 | Valores de la política; la política de E1 intacta; el guard rechaza todo modo de grabación (también en forma `{ mode }`); redacción de errores (mensaje, *stack*, `errorContext`, `cause`); toda suite con `testUser`/`newUserData`/`accountApi` declara la política y ninguna otra la usa ni sobrescribe evidencias |
+| `tests/integration/security/credential-evidence.spec.ts` (Chromium, servidor falso, **sin SUT**) | 3 | (1) 4 tests con cuenta bajo la política (1 pasa, 3 fallan: aserción y acción con la contraseña en el formulario, y uno solo de API): el servidor recibe 4 contraseñas y **ninguna** aparece en consola, informe HTML (incluidos sus datos comprimidos), JSON, `test-results` ni `error-context.md`; no hay `trace.zip` ni `.webm`; hay 2 capturas; las 4 cuentas se borran. (2) Sin la política, la fixture falla con `ConfigurationError` y el servidor no recibe ninguna creación. (3) Control sin SQAF: el escáner **sí** encuentra la contraseña en `trace.zip` y en el informe HTML |
+
+Las muestras están en `tests/unit/support/credential-samples/` y se ejecutan con la política general de CI (`credential-samples.config.ts`). Este contrato va en el proyecto `integration` porque necesita Chromium (CI lo instala después de las pruebas unitarias).
+
+Mutaciones (aplicadas sobre copias de seguridad y revertidas):
+
+| # | Mutación | Resultado |
+|---|---|---|
+| MS1 | `fill()` en lugar de `fillSecret` en el login | Detectada: contraseña en los datos del informe HTML |
+| MS2 | Sin vaciar los campos de contraseña | Detectada: contraseña en `error-context.md` (snapshot final de la página) |
+| MS3 | Sin redactar los errores del test | Detectada: contraseña en `error-context.md` (snapshot de la aserción) |
+| MS4 | Guard desactivado | Detectada: el contrato de rechazo falla |
+
+### 9.4 Verificación contra el SUT (una ejecución, política de CI, `--retries=0`)
+
+`CI=1`, `account-api.spec.ts`, `auth.spec.ts` (E2) y `data-driven.spec.ts`: **10/10 pasan** (`fillSecret` funciona en el login real y en el formulario de alta). 2 cuentas creadas y eliminadas:
+
+| Fixture | `dataId` | Borrado | Verificación independiente (API 14) |
+|---|---|---|---|
+| `newUserData` | `user-mwinvb7j-1ad016cc-1` | `not-found` (el test ya la había borrado) | 404 |
+| `testUser` | `user-mwinvb7j-1ad016cc-2` | `deleted`, `verifiedAbsent: true` | 404 |
+
+Escaneo de todos los artefactos de esa ejecución (consola, informe HTML con sus datos comprimidos, JSON de clasificación): **0** contraseñas generadas y **0** pasos `Fill` con contraseña; ningún `trace.zip` ni video.

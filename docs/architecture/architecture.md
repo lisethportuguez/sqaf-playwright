@@ -255,6 +255,8 @@ flowchart LR
 
 `newUserData` hace lo mismo sin el paso 2: es para el registro por la UI, y su teardown borra la cuenta por si el test la creó.
 
+**Credenciales y evidencias (ADR-0009 D16):** `accountApi`, `newUserData` y `testUser` dependen de `credentialGuard`. Las suites que las usan declaran `test.use(CREDENTIAL_SAFE_EVIDENCE)` (sin traza ni video; captura en fallo); con otra política, el guard falla antes de crear cuentas. Los Page Objects escriben las contraseñas con `fillSecret`, y tras el test el guard vacía los campos de contraseña y redacta los errores. El resto de pruebas conserva la política general de E1.
+
 ## 5. Flujo de ejecución actual
 
 ### 5.1 Línea base

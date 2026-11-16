@@ -60,7 +60,7 @@
 | # | Defecto | Detección | Corrección |
 |---|---|---|---|
 | 1 | La regla de *timeout* de localizador no reconocía `Test timeout of 30000ms exceeded` en una acción | Prueba unitaria nueva en rojo | Patrón `(?:Timeout\|Test timeout of) \d+ms exceeded` |
-| 2 | **Falso positivo del reporter (latente desde E1):** el `error-context.md` de Playwright 1.65 incluye el **código fuente del test**. El reporter lo pasaba entero como texto de la página, y el fallo de un test con `"502: Bad gateway"` en su código se clasificó como `sut-unavailable`. La regla anti-bot de E1 tenía el mismo riesgo (por ejemplo, `tests/integration/fixtures/anti-bot.spec.ts` contiene la frase del desafío) | Clasificación observada en la consola durante la ejecución en rojo del defecto 1 | `pageSnapshotSection()`: solo se usa la sección `# Page snapshot`. Lo cubren 3 pruebas |
+| 2 | **Falso positivo del reporter (latente desde E1):** el `error-context.md` de Playwright 1.65 incluye el **código fuente del test**. El reporter lo pasaba entero como texto de la página, y el fallo de un test con `"502: Bad gateway"` en su código se clasificó como `sut-unavailable`. La regla anti-bot de E1 tenía el mismo riesgo (por ejemplo, `tests/integration/fixtures/anti-bot.spec.ts` contiene la frase del desafío) | Clasificación observada en la consola durante la ejecución en rojo del defecto 1 | `pageSnapshotSection()`: nunca se usa `# Test source`. **Corregido en la revisión (§3.6):** la primera versión solo leía `# Page snapshot`, pero Playwright 1.65 pone el snapshot de un `expect` fallido dentro de `# Error details`; ahora se leen los bloques `yaml` de ambas secciones |
 | 3 | Un fallo real de DNS en Windows (`getaddrinfo ENOENT`, §E3) no estaba en el patrón heurístico de red. Se clasificó bien por el marcador SQAF, pero un error crudo de Playwright habría quedado `unclassified` | Fallo real durante la primera ejecución de integración de E3 | Patrón `getaddrinfo [A-Z_]+` y prueba con el mensaje real |
 
 ### 3.5 Mutaciones controladas
@@ -76,6 +76,28 @@ Cada mutación se aplicó con `sed` sobre el código ya confirmado (`3dc07b1`), 
 | M8 | La secuencia de ids no avanza | `tests/unit/utils`, `tests/unit/data` | 5 |
 
 Las 5 mutaciones se detectaron. Las de E3 están en [E3 §4.1](E3-test-data-management.md#41-mutaciones-controladas).
+
+### 3.6 Revisión complementaria (2026-11-15)
+
+**Clasificación.** Fallos reales de Playwright 1.65 contra un servidor local (sin SUT), clasificados por el reporter real y comparados con el de `v0.3.0`:
+
+| Caso | Antes de la revisión | Después | `v0.3.0` |
+|---|---|---|---|
+| C1. Aserción en página 502 de Cloudflare | `assertion/mismatch` ❌ | `infrastructure/sut-unavailable` ✅ | `unclassified` |
+| C1b. 502 sin frase estándar | `assertion/mismatch` | `assertion/mismatch` | `unclassified` |
+| C1c. *Timeout* de acción en página 502 | `automation/locator-timeout` | `automation/locator-timeout` (limitación, §6) | `unclassified` |
+| C2. *Timeout* de localizador | `automation/locator-timeout` | `automation/locator-timeout` | `unclassified` |
+| C3a / C3b. DNS en navegador / API | `infrastructure/network` | `infrastructure/network` | `unclassified` |
+| C4. Desafío con `toHaveTitle` | `anti-bot` | `anti-bot` | `anti-bot` |
+| C4b. Desafío con aserción de localizador | `assertion/mismatch` ❌ **(regresión)** | `anti-bot` ✅ | `anti-bot` |
+| C5. "Rs. 502" con HTTP 200 | `assertion/mismatch` | `assertion/mismatch` | `unclassified` |
+| C5b. Expectativa "502 Bad Gateway" con HTTP 200 | `sut-unavailable` ❌ **(falso positivo)** | `assertion/mismatch` ✅ | `unclassified` |
+
+Correcciones: `pageSnapshotSection` lee los bloques `yaml` de `# Error details` y `# Page snapshot` (ADR-0008 D8); la regla 5xx descarta las líneas `Expected…:`, `Locator:` y el *call log* (D12). 6 pruebas nuevas en `taxonomy.spec.ts` reproducen los adjuntos reales (C1, C4b, C5, C5b). En todos los casos el estado sigue siendo `failed` y el código de salida no cambia.
+
+**Redacción de `SqafError`** (ADR-0008 D9): objetos y arrays anidados, texto (`password=…`, JSON, cabeceras, contraseñas generadas) y cadena de `cause` (copias saneadas, corte de ciclos y de profundidad). 11 pruebas nuevas en `tests/unit/errors/secret-redaction.spec.ts`, incluida la simulación de lo que serializa Playwright (mensaje, *stack* y `cause`). La prueba de `error-hierarchy.spec.ts` que exigía conservar la `cause` original (`toBe`) se adaptó: ahora es una copia saneada con el mismo nombre y mensaje.
+
+**Pruebas de E1:** `failure-classification.spec.ts`, `failure-classification-reporter.spec.ts` y `dependency-rule.spec.ts` no cambian respecto del commit `323ee34`.
 
 ## 4. Integraciones reales
 
@@ -93,5 +115,6 @@ Ver [E3-test-data-management.md §7](E3-test-data-management.md#7-regresión-e0e
 ## 6. Limitaciones
 
 - `assertion/mismatch` indica que una expectativa no se cumplió. No distingue un defecto del producto de uno de la automatización (ADR-0008).
+- Si Playwright no incluye ningún snapshot en el adjunto (por ejemplo, un *timeout* de acción, caso C1c), una página 5xx no se puede reconocer y el fallo queda `automation/locator-timeout`.
 - La clasificación se basa en texto. Un mensaje con un formato nuevo de Playwright puede quedar `unclassified` hasta que se observe y se añada su patrón con evidencia.
 - La cabecera del resumen del job sigue listando todos los proyectos configurados (pendiente de E2, previsto para E6).

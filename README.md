@@ -180,6 +180,16 @@ Users come from fixtures:
 
 E-mails are always synthetic (`sqaf.<id>@example.com`); passwords are random and never logged. See [ADR-0009](docs/architecture/decisions/ADR-0009-test-data-management.md).
 
+A spec file that uses `testUser`, `newUserData` or `accountApi` must declare the credential-safe evidence policy at its top level; otherwise those fixtures fail before creating any account:
+
+```ts
+import { CREDENTIAL_SAFE_EVIDENCE, test } from '@sqaf/fixtures';
+
+test.use(CREDENTIAL_SAFE_EVIDENCE); // no trace, no video, screenshot on failure
+```
+
+Playwright traces store form bodies and typed values, so these tests run without them. Page Objects type passwords with `fillSecret` (the value never appears in a step title), and after each test the fixtures empty password inputs and redact passwords from the test errors. Every other test keeps the general evidence policy.
+
 ## Execution commands
 
 | Command | Description |
@@ -261,7 +271,7 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 - Advertising hosts are blocked during test execution, so tests do not reproduce the exact ad-supported user experience.
 - Only Chromium is used so far; Firefox and WebKit projects are defined but have no tests until Stage 4.
 - Account confirmation pages, logout and account deletion through the UI are implemented but not yet exercised against the SUT (Stage 4). Since Stage 3, two integration tests create one synthetic account each through the API and delete it in the same run.
-- Playwright traces are kept on failure (Stage 1 evidence policy). A trace of a failed test that uses an account contains that synthetic account's random password; the account is deleted at the end of the test.
+- Tests that handle account credentials run without trace or video (screenshots are kept on failure), so their failures are harder to diagnose than those of other tests. Suites must not assert on a password value: the failed step message would end up in the HTML report.
 - The SUT is served through Cloudflare and may answer CI runners with an anti-bot challenge page. Such failures are detected and classified as infrastructure failures, but they still fail the run: SQAF does not try to bypass the challenge.
 
 ## Documentation
