@@ -23,6 +23,7 @@
     "test:unit": "playwright test --project=unit",
     "test:baseline": "playwright test --project=baseline",
     "test:integration": "playwright test --project=integration",
+    "test:e2e": "playwright test --project=chromium",
     "report": "playwright show-report"
   },
   "devDependencies": {

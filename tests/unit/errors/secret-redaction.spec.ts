@@ -19,11 +19,11 @@ test.describe('redactSecrets (text)', () => {
 
   test('redacts form, query, JSON and header pairs', () => {
     expect(redactSecrets(`email=a%40example.com&password=${PLAIN}&title=Mr`)).toBe(
-      `email=a%40example.com&password=${REDACTED}&title=Mr`,
+      `email=[e-mail redacted]&password=${REDACTED}&title=Mr`,
     );
     expect(redactSecrets(`/x?access_token=${PLAIN}`)).toBe(`/x?access_token=${REDACTED}`);
     expect(redactSecrets(`{"email":"a@example.com","password":"${PLAIN}"}`)).toBe(
-      `{"email":"a@example.com","password":"${REDACTED}"}`,
+      `{"email":"[e-mail redacted]","password":"${REDACTED}"}`,
     );
     expect(redactSecrets(`Authorization: Bearer ${PLAIN}`)).toBe(`Authorization: ${REDACTED}`);
     expect(redactSecrets(`cookie: session=${PLAIN}; theme=dark`)).toBe(`cookie: ${REDACTED}`);
@@ -58,11 +58,11 @@ test.describe('nested context', () => {
     expect(text).not.toContain(PLAIN);
     expect(context).toEqual({
       Request: {
-        form: { email: 'sqaf.a@example.com', password: REDACTED },
+        form: { email: '[e-mail redacted]', password: REDACTED },
         headers: [{ Authorization: REDACTED }, { accept: 'text/html' }],
         nested: { deeper: { apiToken: REDACTED, note: `token=${REDACTED}` } },
       },
-      Account: 'sqaf.a@example.com',
+      Account: '[e-mail redacted]',
     });
     expect(Object.isFrozen((context['Request'] as Record<string, unknown>)['form'])).toBe(true);
   });

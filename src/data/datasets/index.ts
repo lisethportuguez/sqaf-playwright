@@ -4,6 +4,7 @@ import type {
   InvalidCredentialsCase,
   PaymentCard,
   Product,
+  ProductCategory,
   ProductSearchCase,
 } from '../types';
 import type { Schema } from '../validation/schema';
@@ -11,6 +12,7 @@ import {
   accountProfileSchema,
   invalidCredentialsCaseSchema,
   paymentCardSchema,
+  productCategorySchema,
   productSchema,
   productSearchCaseSchema,
 } from '../validation/schemas';
@@ -39,6 +41,8 @@ export const DATASETS = Object.freeze({
   products: dataset<Product>('products/catalog.json', productSchema),
   productSearches: dataset<ProductSearchCase>('products/search-terms.json', productSearchCaseSchema),
   paymentCards: dataset<PaymentCard>('checkout/payment-cards.json', paymentCardSchema),
+  // Stage 4 (ADR-0010): TC18.
+  productCategories: dataset<ProductCategory>('products/categories.json', productCategorySchema),
 });
 
 export type DatasetName = keyof typeof DATASETS;

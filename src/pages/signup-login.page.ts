@@ -36,6 +36,8 @@ export class SignupLoginPage extends BasePage {
   readonly signupNameInput: Locator;
   readonly signupEmailInput: Locator;
   readonly signupButton: Locator;
+  /** Shown when the signup e-mail is already registered (TC5). */
+  readonly signupError: Locator;
 
   constructor(page: SignupLoginPage['page']) {
     super(page);
@@ -49,6 +51,7 @@ export class SignupLoginPage extends BasePage {
     this.signupNameInput = page.getByTestId('signup-name');
     this.signupEmailInput = page.getByTestId('signup-email');
     this.signupButton = page.getByTestId('signup-button');
+    this.signupError = page.getByText('Email Address already exist!', { exact: true });
   }
 
   async login(credentials: LoginCredentials): Promise<void> {

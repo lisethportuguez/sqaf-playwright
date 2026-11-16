@@ -40,9 +40,10 @@ test('the baseline step is unchanged apart from its summary heading', () => {
 test('the integration run has separate outputs and artifacts', () => {
   const run = stepBlock('Integration tests (Page Objects and fixtures)');
   expect(run).toContain('npm run test:integration -- --output=test-results-integration');
-  expect(run).toContain('PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-integration');
   expect(run).not.toMatch(/--(workers|retries)/);
-  expect(stepBlock('Upload integration HTML report')).toContain('path: playwright-report-integration/');
+  // Stage 4 (E4.5 security closure): the HTML report is replaced by the safe summary.
+  // Detailed contracts: tests/unit/ci/workflow-integration-artifacts.spec.ts.
+  expect(stepBlock('Upload integration summary')).toMatch(/^\s+path: reports\/run-summary\.json$/m);
   expect(stepBlock('Upload integration failure evidence')).toContain('test-results-integration/');
 });
 
@@ -71,10 +72,14 @@ test.describe('baseline credentials are never published (INC-2026-11-16)', () =>
     expect(block).toContain('if-no-files-found: error');
   });
 
+  // Stage 4 (E4.5 final closure): the failure evidence no longer publishes any
+  // raw test output (test-results/), so the baseline outputs stay excluded a
+  // fortiori; only the redacted failure classification is published.
+  // Detailed contracts: tests/unit/ci/workflow-failure-evidence.spec.ts.
   test('the failure evidence excludes the baseline outputs', () => {
     const block = stepBlock('Upload failure evidence');
-    expect(block).toMatch(/^\s+test-results\/$/m);
-    expect(block).toMatch(/^\s+!test-results\/\*-baseline\/\*\*$/m);
+    expect(block).toMatch(/^\s+path: reports\/failure-classification\.json$/m);
+    expect(block).not.toMatch(/^\s+[^#\n]*test-results/m);
   });
 
   test('the baseline run step is exactly the Stage 1 step', () => {
@@ -89,8 +94,14 @@ test.describe('baseline credentials are never published (INC-2026-11-16)', () =>
     );
   });
 
-  test('the integration HTML report and its failure evidence are still published', () => {
-    expect(stepBlock('Upload integration HTML report')).toContain('path: playwright-report-integration/');
+  // Stage 4 (E4.5 security closure): the integration HTML report is no longer
+  // published either (synthetic e-mails in `Fill` step titles); the integration
+  // run publishes its safe summary and, on failure, the evidence of the suites
+  // without accounts (tests/unit/ci/workflow-integration-artifacts.spec.ts).
+  test('the integration publishes its safe summary and its failure evidence, never an HTML report', () => {
+    expect(STEP_NAMES).not.toContain('Upload integration HTML report');
+    expect(WORKFLOW).not.toMatch(/playwright-report-integration/);
+    expect(stepBlock('Upload integration summary')).toMatch(/^\s+path: reports\/run-summary\.json$/m);
     expect(stepBlock('Upload integration failure evidence')).toContain('test-results-integration/');
   });
 });

@@ -68,6 +68,12 @@ Casos verificados de extremo a extremo con el reporter real (`docs/validation/E5
 - **Mover `ConfigurationError` a `src/errors`**: rompería la regla de dependencias (`config` no importa capas).
 - **Clasificar con varias etiquetas por intento**: complica el análisis de E7 sin beneficio claro.
 
+### Ajuste de la Etapa 4 (E4.5): e-mails
+
+`redactSecrets` redacta también **direcciones de e-mail** (`redactEmails`, también codificadas como `%40`). Toda dirección se sustituye por `[e-mail redacted]`. Hasta el cierre final de E4.5, una dirección generada por SQAF (`sqaf.<dataId>@…`) conservaba su `dataId` (`[e-mail redacted: <dataId>]`) para localizar la cuenta; se eliminó porque el e-mail se reconstruye a partir del `dataId` y el repositorio, sus logs de CI y sus artifacts son públicos. Las fixtures conservan el objeto de la cuenta, así que la limpieza y su verificación no dependen del mensaje. Desde el mismo cierre, `redactSecrets` sustituye también los **números de tarjeta** (15 a 19 dígitos seguidos que superan el algoritmo de Luhn) por `[card redacted]`; las marcas de tiempo en milisegundos (13 dígitos) no cambian. Así el e-mail sintético no aparece en el mensaje, el contexto, la evidencia, la cadena de causas ni la serialización JSON de un `SqafError`, ni en los errores redactados de las suites con cuenta, ni en el extracto del informe de clasificación. `ApiError.responseMessage` se redacta igual, porque se serializa con el error. La clasificación no cambia: `classifyFailure` lee los mensajes originales.
+
+Al añadir las pruebas se corrigió un defecto previo: un par `password=<contraseña generada>` quedaba como `password=[REDACTED]]`.
+
 ## Consecuencias
 
 - Toda clasificación nueva se añade en `classifications.ts`. Los contadores del informe y los tipos se actualizan solos.

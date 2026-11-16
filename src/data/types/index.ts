@@ -87,6 +87,25 @@ export interface ProductSearchCase {
   readonly expectedProducts: readonly string[];
 }
 
+/** Section (panel) of the category sidebar. */
+export type CategorySection = 'Women' | 'Men' | 'Kids';
+
+/** Data-driven case (Stage 4, TC18): a sidebar category and the exact products of its page. */
+export interface ProductCategory {
+  readonly id: string;
+  readonly description: string;
+  /** Sidebar panel that contains the category link. */
+  readonly section: CategorySection;
+  /** Text of the category link inside the panel, for example `Dress`. */
+  readonly name: string;
+  /** Id in the category page URL (`/category_products/<id>`). */
+  readonly categoryId: number;
+  /** Heading of the category page: `<section> - <name> Products`. */
+  readonly heading: string;
+  /** Names of every product of the category page, in page order. */
+  readonly expectedProducts: readonly string[];
+}
+
 /** Test payment card for the checkout. Fictitious: never a real card. */
 export interface PaymentCard {
   readonly id: string;

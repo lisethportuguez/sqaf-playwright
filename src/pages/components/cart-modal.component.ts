@@ -1,4 +1,4 @@
-import type { Locator } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 /**
  * SQAF — Confirmation modal shown after "Add to cart" (Stage 2).
@@ -8,6 +8,11 @@ import type { Locator } from '@playwright/test';
  * "Continue Shopping" button. No business verification here (D3).
  */
 export class CartModal {
+  /** The modal of a page (every page with "Add to cart" renders the same `#cartModal`). */
+  static of(page: Page): CartModal {
+    return new CartModal(page.locator('#cartModal'));
+  }
+
   readonly title: Locator;
   readonly confirmationMessage: Locator;
   readonly viewCartLink: Locator;

@@ -1,0 +1,49 @@
+{
+  "description": "Product categories of the left sidebar and the exact products of each category page (data-driven, TC18).",
+  "source": "GET https://automationexercise.com/api/productsList and GET /category_products/1 on 2026-11-16 (category = usertype > category; the category page lists the same products in API order).",
+  "items": [
+    {
+      "id": "women-dress",
+      "description": "Women > Dress",
+      "section": "Women",
+      "name": "Dress",
+      "categoryId": 1,
+      "heading": "Women - Dress Products",
+      "expectedProducts": ["Sleeveless Dress", "Stylish Dress", "Rose Pink Embroidered Maxi Dress"]
+    },
+    {
+      "id": "women-tops",
+      "description": "Women > Tops",
+      "section": "Women",
+      "name": "Tops",
+      "categoryId": 2,
+      "heading": "Women - Tops Products",
+      "expectedProducts": ["Blue Top", "Winter Top", "Summer White Top", "Madame Top For Women", "Fancy Green Top", "Lace Top For Women"]
+    },
+    {
+      "id": "men-tshirts",
+      "description": "Men > Tshirts",
+      "section": "Men",
+      "name": "Tshirts",
+      "categoryId": 3,
+      "heading": "Men - Tshirts Products",
+      "expectedProducts": [
+        "Men Tshirt",
+        "Pure Cotton V-Neck T-Shirt",
+        "Green Side Placket Detail T-Shirt",
+        "Premium Polo T-Shirts",
+        "Pure Cotton Neon Green Tshirt",
+        "GRAPHIC DESIGN MEN T SHIRT - BLUE"
+      ]
+    },
+    {
+      "id": "men-jeans",
+      "description": "Men > Jeans",
+      "section": "Men",
+      "name": "Jeans",
+      "categoryId": 6,
+      "heading": "Men - Jeans Products",
+      "expectedProducts": ["Soft Stretch Jeans", "Regular Fit Straight Jeans", "Grunt Blue Slim Fit Jeans"]
+    }
+  ]
+}

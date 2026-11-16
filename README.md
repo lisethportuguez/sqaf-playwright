@@ -9,9 +9,9 @@ A multi-layer functional test automation framework built with **Playwright** and
 
 SQAF is developed as the practical component of an undergraduate thesis (TFG) in Software Quality Management Engineering, and as a professional portfolio project.
 
-> **Project status: Stages 0, 1, 2, 3 and 5 are closed, merged into `main` and tagged `v0.1.0`, `v0.2.0`, `v0.3.0` and `v0.4.0`** (Stages 3 and 5 were delivered together as cycle 1 in PR [#6](https://github.com/lisethportuguez/sqaf-playwright/pull/6)). Next: Stage 4 (functional scenarios).
-> Evidence: Stage 0 in [E0-baseline-runs.md](docs/validation/E0-baseline-runs.md), Stage 1 in [E1-configuration.md](docs/validation/E1-configuration.md), Stage 2 in [E2-page-objects-fixtures.md](docs/validation/E2-page-objects-fixtures.md), Stage 5 in [E5-utilities-error-handling.md](docs/validation/E5-utilities-error-handling.md), Stage 3 in [E3-test-data-management.md](docs/validation/E3-test-data-management.md).
-> Cycle 1 adds the error hierarchy and the full failure taxonomy, common utilities, JSON datasets with typed providers and runtime validation, data factories, data-driven tests and API account provisioning with verified cleanup. The 15 SQAF functional scenarios are **not implemented yet** (Stage 4). See [Roadmap](#roadmap).
+> **Project status: Stages 0, 1, 2, 3 and 5 are closed, merged into `main` and tagged `v0.1.0`, `v0.2.0`, `v0.3.0` and `v0.4.0`** (Stages 3 and 5 were delivered together as cycle 1 in PR [#6](https://github.com/lisethportuguez/sqaf-playwright/pull/6)). Stage 4 (functional scenarios) is in progress on `stage/4-functional-scenarios`, not merged: all 15 scenarios are implemented and validated locally on Chromium (blocks E4.1 authentication, E4.2 products, E4.3 cart and checkout), and the local measurement (E4.4: 3 full runs) is done: 50/54 tests passed (92.6 %), 0 functional failures, 4 failures caused by HTTP 503 answers of the SUT. Not validated in CI yet.
+> Evidence: Stage 0 in [E0-baseline-runs.md](docs/validation/E0-baseline-runs.md), Stage 1 in [E1-configuration.md](docs/validation/E1-configuration.md), Stage 2 in [E2-page-objects-fixtures.md](docs/validation/E2-page-objects-fixtures.md), Stage 5 in [E5-utilities-error-handling.md](docs/validation/E5-utilities-error-handling.md), Stage 3 in [E3-test-data-management.md](docs/validation/E3-test-data-management.md), Stage 4 (in progress) in [E4-functional-scenarios.md](docs/validation/E4-functional-scenarios.md).
+> Cycle 1 adds the error hierarchy and the full failure taxonomy, common utilities, JSON datasets with typed providers and runtime validation, data factories, data-driven tests and API account provisioning with verified cleanup. The 15 SQAF functional scenarios are implemented (Stage 4); they are not run in CI yet. See [Roadmap](#roadmap).
 
 ---
 
@@ -95,7 +95,7 @@ Current structure (Stages 0–3 and 5):
 ├── tests/
 │   ├── unit/                  # Framework unit tests (no browser, no SUT)
 │   ├── integration/           # Page Object, fixture, data-driven and account tests (Chromium)
-│   └── e2e/                   # SQAF suites (from Stage 4)
+│   └── e2e/                   # SQAF functional scenarios (Stage 4): authentication/, products/, checkout/
 ├── docs/                      # Internal documentation (Spanish)
 ├── metrics/
 │   ├── experiments/           # Experimental evidence (sanitized)
@@ -198,12 +198,13 @@ Playwright traces store form bodies and typed values, so these tests run without
 | `npm run test:unit` | Runs the framework unit tests (no browser, no SUT) |
 | `npm run test:baseline` | Runs the 5 baseline scenarios on Chromium |
 | `npm run test:integration` | Runs the integration tests on Chromium (Page Objects, fixtures, data-driven tests and account provisioning; 2 tests create and delete one account each) |
+| `npm run test:e2e` | Runs the SQAF functional scenarios (`tests/e2e`) on Chromium. Scenarios tagged `@account` create one synthetic account each and delete it; filter with `--grep @smoke` or `--grep-invert @account` |
 | `npm test` | Runs all Playwright projects (currently the unit tests, the baseline and the integration tests) |
 | `npm run report` | Opens the last HTML report |
 
 ## Reporting
 
-Playwright's HTML report is generated in `playwright-report/` (not versioned). In CI, only the **integration** HTML report is uploaded as a workflow artifact. The baseline HTML report is generated but never published, because it records typed values such as the baseline's test password ([INC-2026-11-16](docs/security/INC-2026-11-16-baseline-report-credentials.md)). The baseline publishes its failure classification JSON instead.
+Playwright's HTML report is generated in `playwright-report/` (not versioned) for local runs. **CI publishes no HTML report.** The baseline HTML report is generated but never published, because it records typed values such as the baseline's test password ([INC-2026-11-16](docs/security/INC-2026-11-16-baseline-report-credentials.md)); the baseline publishes its failure classification JSON instead. The integration and functional-scenario steps generate no HTML report at all, because it would show the synthetic test-account e-mails (Playwright writes typed values in `Fill` step titles); they publish a safe summary instead (Stage 4, E4.5).
 
 Every failed attempt is also classified by an observer reporter and written to the console, to `reports/failure-classification.json` and, in CI, to the job summary. The error excerpt stored in that JSON is redacted (typed values and secret-looking pairs). Since Stage 5 the taxonomy is:
 
@@ -226,15 +227,17 @@ Multi-format reporting and a custom metrics reporter are planned for Stage 6.
 
 The [CI workflow](.github/workflows/ci.yml) runs on push to `main`, on pull requests and on manual dispatch:
 
-`checkout → setup Node (.nvmrc) → npm ci → typecheck → unit tests → install Chromium → baseline (1 worker) → upload baseline classification JSON (+ failure evidence without baseline outputs, on failure) → integration tests → upload integration report (+ integration failure evidence on failure)`
+`checkout → setup Node (.nvmrc) → npm ci → typecheck → unit tests → install Chromium → baseline (1 worker) → upload baseline classification JSON (+ failure classification as failure evidence, on failure; no raw test outputs) → integration tests → upload integration safe summary (+ failure evidence of the integration suites without accounts, on failure) → functional scenarios → upload e2e safe summary (+ product-suite failure evidence on failure)`
 
-The integration tests run after the baseline and its evidence upload, so they never affect the baseline run. They have their own output folders and artifacts.
+The integration tests run after the baseline and its evidence upload, so they never affect the baseline run. They have their own output folders and artifacts. Since the Stage 4 security closure (implemented locally, not yet run on GitHub Actions), the integration step no longer publishes its HTML report: it publishes the same safe summary as the functional scenarios and, on failure, only the evidence of the suites that use no test accounts, e-mails, passwords or card data. Nothing CI publishes contains an e-mail, an account data id, a password or a card number, and error messages in the job log show e-mails only as `[e-mail redacted]`. When the unit tests or the baseline fail, CI publishes only the redacted failure classification, never raw test outputs. Runtime tests check this against a fake SUT and synthetic failing samples.
+
+**Functional scenarios (Stage 4, E4.5 — implemented locally, not yet run on GitHub Actions):** after the integration tests, `npm run test:e2e` (Chromium, 1 worker, the CI retries of `playwright.config.ts`) runs only the `@smoke` scenarios on pull requests (9 tests, 2 test accounts) and the full suite on pushes to `main` and manual runs (18 tests, 8 test accounts). For safety, this step generates **no HTML report and no raw JSON** (they would hold the synthetic test-account e-mails). It publishes only a safe summary (`reports/run-summary.json` and a job-summary table: outcome, attempts, duration and failure classification per test, flaky tests included). On failure, it publishes the evidence of the product suites only, never that of the authentication and checkout suites. A running workflow run is never cancelled (on pull requests or on `main`): a newer push waits for it, so every test account reaches its cleanup.
 
 Changes that touch **only** documentation (`docs/**` or Markdown files) do not trigger the workflow, so the external SUT is not hit without need. Code, configuration, tests, workflows and dependency manifests always trigger it. A manual run (`workflow_dispatch`) is never filtered and always runs the full pipeline, baseline included. See [ADR-0003](docs/architecture/decisions/ADR-0003-ci-github-actions.md).
 
 ## Metrics
 
-Metric definitions and the experimental comparison (baseline vs. SQAF) are planned for Stages 6–7. Stage 0 run records: [E0-baseline-runs.md](docs/validation/E0-baseline-runs.md). Raw (sanitized) evidence of the six local Stage 0 baseline executions, including the failed ones: [metrics/experiments/E0-baseline](metrics/experiments/E0-baseline/). Non-experimental verification runs (for example, the Stage 1 and Stage 2 checks that the baseline still passes under its frozen conditions) are kept separately in [metrics/verification](metrics/verification/) and are not part of the experimental dataset.
+Metric definitions and the experimental comparison (baseline vs. SQAF) are planned for Stages 6–7. Stage 0 run records: [E0-baseline-runs.md](docs/validation/E0-baseline-runs.md). Raw (sanitized) evidence of the six local Stage 0 baseline executions, including the failed ones: [metrics/experiments/E0-baseline](metrics/experiments/E0-baseline/). Stage 4 local measurement of the 15 SQAF scenarios (3 runs, per-test results and durations, failure classification, account cleanup, artifact scan, maintainability metrics and a descriptive comparison with E0): [metrics/experiments/E4-sqaf](metrics/experiments/E4-sqaf/) (extracted values only; the raw reports are not versioned because they contain the synthetic test-account e-mails). Non-experimental verification runs (for example, the Stage 1 and Stage 2 checks that the baseline still passes under its frozen conditions) are kept separately in [metrics/verification](metrics/verification/) and are not part of the experimental dataset.
 
 ## Roadmap
 
@@ -260,7 +263,7 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 | 3 | Data-driven tests (invalid credentials, product search, user profiles) | Validated (5 SUT cases + offline cases, local and CI) |
 | 3 | Account API client and `newUserData` / `testUser` fixtures with verified cleanup | Validated (2 SUT tests per run, cleanup verified through the API, local and CI) |
 | 3 | Credential-safe evidence policy (no trace or video for tests that handle passwords) | Validated (runtime contract with a fake SUT, local and CI) |
-| 4 | Test layer — 15 functional scenarios, tags, traceability | Planned |
+| 4 | Test layer — 15 functional scenarios, tags, traceability | Implemented and validated locally on Chromium (15 scenarios, 18 tests); CI step implemented locally, not yet run on GitHub (E4.5); E4.4 measurement: 3 runs, 50/54 passed, 0 functional failures, 4 SUT HTTP 503 failures, 24 accounts all deleted and verified; traceability contract in place; not yet in CI ([summary](metrics/experiments/E4-sqaf/summary.json)) |
 | 5 | Error hierarchy (`SqafError`, `DataValidationError`, `ApiError`) and full failure taxonomy | Validated (local and CI); real failures observed: a local DNS failure and an HTTP 503 of the SUT in CI, now classified from structured HTTP evidence |
 | 5 | Common utilities (price, unique ids/e-mails, text, durations, guards, secret redaction) | Validated (unit tests, local and CI) |
 | 6 | Reporting and metrics (HTML, JSON, JUnit, MetricsReporter) | Planned |
@@ -270,9 +273,10 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 
 - The SUT is a public third-party website: availability and content are outside the project's control.
 - Advertising hosts are blocked during test execution, so tests do not reproduce the exact ad-supported user experience.
-- Only Chromium is used so far; Firefox and WebKit projects are defined but have no tests until Stage 4.
-- Account confirmation pages, logout and account deletion through the UI are implemented but not yet exercised against the SUT (Stage 4). Since Stage 3, two integration tests create one synthetic account each through the API and delete it in the same run.
+- Only Chromium is used; the Firefox and WebKit projects are defined but out of the current scope.
+- The functional scenarios are not run in CI yet: the CI step (`@smoke` on pull requests, the full suite on `main`) is implemented locally but has not run on GitHub Actions. Since Stage 3, two integration tests create one synthetic account each through the API and delete it in the same run.
 - The baseline HTML report is not published in CI, so a baseline failure in CI is diagnosed from the console log, the job summary and the classification JSON; detailed diagnosis means reproducing it locally. If the baseline's `fill(password)` failed after locating its field, Playwright would print the typed value in the CI console log (see [INC-2026-11-16](docs/security/INC-2026-11-16-baseline-report-credentials.md)).
+- Error messages and logs redact e-mail addresses (a SQAF address keeps only its data id, so the CI console log of a failed account test can show that id); the published CI summaries drop the data id too. Since no HTML report is published in CI, integration and account-scenario failures are diagnosed from the console log, the safe summary and the job summary, or by reproducing them locally.
 - Tests that handle account credentials run without trace or video (screenshots are kept on failure), so their failures are harder to diagnose than those of other tests. Suites must not assert on a password value: the failed step message would end up in the HTML report.
 - The SUT is served through Cloudflare and may answer CI runners with an anti-bot challenge page. Such failures are detected and classified as infrastructure failures, but they still fail the run: SQAF does not try to bypass the challenge.
 
@@ -285,7 +289,9 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 - [Stage 2 validation records](docs/validation/E2-page-objects-fixtures.md)
 - [Stage 5 validation records](docs/validation/E5-utilities-error-handling.md)
 - [Stage 3 validation records](docs/validation/E3-test-data-management.md)
+- [Stage 4 validation records](docs/validation/E4-functional-scenarios.md)
 - [Stage 0 baseline evidence](metrics/experiments/E0-baseline/)
+- [Stage 4 measurement evidence](metrics/experiments/E4-sqaf/)
 
 ## Versioning
 

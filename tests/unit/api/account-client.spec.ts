@@ -115,7 +115,12 @@ test.describe('failures are classified, and never leak the password', () => {
       const error = await failure(() => new AccountApiClient(request, OPTIONS).createAccount(user));
       expect(error).toBeInstanceOf(type);
       expect(error.classification).toBe(classification);
-      expect(error.message).toContain(user.email); // the account can be found and cleaned by hand
+      // Stage 4 (E4.5): the e-mail is redacted, with no data id (the repository and its CI logs are public).
+      expect(error.message).toContain('Account: [e-mail redacted]');
+      expect(error.message).not.toContain(user.dataId);
+      expect(JSON.stringify(error)).not.toContain(user.dataId);
+      expect(error.message).not.toContain(user.email);
+      expect(JSON.stringify(error)).not.toContain(user.email);
       expect(error.message).not.toContain(user.password);
       expect(error.message).not.toContain('Call log');
     });

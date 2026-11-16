@@ -161,7 +161,8 @@ export default class FailureClassificationReporter implements Reporter {
     });
 
     this.failures.push({
-      test: test.titlePath().filter(Boolean).slice(1).join(' › '),
+      // Redacted like the excerpt (E4.5 final closure): the report is published as failure evidence.
+      test: redactSecrets(test.titlePath().filter(Boolean).slice(1).join(' › ')),
       project: test.parent.project()?.name ?? '',
       file: toPosix(relative(this.rootDir, test.location.file)),
       line: test.location.line,

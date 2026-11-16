@@ -47,22 +47,76 @@ const KEY = '[A-Za-z_-]*(?:password|passwd|pass|pwd|secret|token|credentials?)';
  *  - JSON: `"password": "value"`
  *  - headers: `Authorization: …` and `Cookie: …` (rest of the line)
  */
-const FORM_PAIR = new RegExp(String.raw`\b(${KEY})=([^\s"'&,;}\]]+)`, 'gi');
+// `(?!\[REDACTED\])`: a value already replaced (a generated password) is not redacted twice ("[REDACTED]]").
+const FORM_PAIR = new RegExp(String.raw`\b(${KEY})=(?!\[REDACTED\])([^\s"'&,;}\]]+)`, 'gi');
 const JSON_PAIR = new RegExp(String.raw`("${KEY}"\s*:\s*")((?:[^"\\]|\\.)*)(")`, 'gi');
 const HEADER_PAIR = /\b((?:proxy-)?authorization|(?:set-)?cookie)(\s*[:=]\s*)([^\r\n]+)/gi;
+
+/**
+ * E-mail addresses, plain or URL-encoded (`%40`), as they appear in error
+ * messages, form bodies and query strings (Stage 4, E4.5). The test accounts
+ * are synthetic (reserved domains), but no e-mail, and no account data id, is
+ * written to a message, log or report.
+ */
+// The top-level domain must be alphabetic, so `package@1.2.3` (npm, Playwright versions) is not an address.
+const EMAIL = /[A-Za-z0-9._%+-]+(?:@|%40)(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}\b/gi;
+export const REDACTED_EMAIL = '[e-mail redacted]';
+
+/**
+ * Replaces every e-mail address with `[e-mail redacted]`. Nothing of the
+ * address is kept: not even the data id of a SQAF address
+ * (`sqaf.<dataId>@…`), because the address can be rebuilt from it and the
+ * repository, its CI logs and its artifacts are public (E4.5 final security
+ * closure). The fixtures keep the account object, so the cleanup never needs
+ * the message to find the account.
+ */
+export function redactEmails(text: string): string {
+  return text.replace(EMAIL, REDACTED_EMAIL);
+}
+
+/**
+ * Payment card numbers: 15 to 19 consecutive digits that pass the Luhn check
+ * (E4.5 final closure; the checkout data uses public test cards). Shorter
+ * runs, such as millisecond timestamps (13 digits), are never touched.
+ */
+const CARD_NUMBER = /(?<!\d)\d{15,19}(?!\d)/g;
+export const REDACTED_CARD = '[card redacted]';
+
+function passesLuhn(digits: string): boolean {
+  let sum = 0;
+  for (let i = 0; i < digits.length; i += 1) {
+    let digit = Number(digits[digits.length - 1 - i]);
+    if (i % 2 === 1) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    sum += digit;
+  }
+  return sum % 10 === 0;
+}
+
+/** Replaces every Luhn-valid card number. */
+export function redactCardNumbers(text: string): string {
+  return text.replace(CARD_NUMBER, (digits) => (passesLuhn(digits) ? REDACTED_CARD : digits));
+}
 
 /** A new matcher of generated passwords (a fresh RegExp: global regexes are stateful). */
 export function generatedPasswordPattern(): RegExp {
   return new RegExp(GENERATED_PASSWORD_SOURCE, 'g');
 }
 
-/** Replaces secret pairs (form, JSON, headers) and SQAF-generated passwords in a text. */
+/**
+ * Replaces secret pairs (form, JSON, headers), SQAF-generated passwords and,
+ * since Stage 4 (E4.5), e-mail addresses and card numbers in a text.
+ */
 export function redactSecrets(text: string): string {
-  return text
-    .replace(generatedPasswordPattern(), REDACTED)
-    .replace(FORM_PAIR, (_m, key: string) => `${key}=${REDACTED}`)
-    .replace(JSON_PAIR, (_m, head: string, _value: string, tail: string) => `${head}${REDACTED}${tail}`)
-    .replace(HEADER_PAIR, (_m, key: string, separator: string) => `${key}${separator}${REDACTED}`);
+  return redactCardNumbers(redactEmails(
+    text
+      .replace(generatedPasswordPattern(), REDACTED)
+      .replace(FORM_PAIR, (_m, key: string) => `${key}=${REDACTED}`)
+      .replace(JSON_PAIR, (_m, head: string, _value: string, tail: string) => `${head}${REDACTED}${tail}`)
+      .replace(HEADER_PAIR, (_m, key: string, separator: string) => `${key}${separator}${REDACTED}`),
+  ));
 }
 
 /** Replaces every occurrence of the given exact values (for secrets known at runtime). */

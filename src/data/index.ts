@@ -13,6 +13,7 @@
  */
 export { DATASETS, type DatasetDefinition, type DatasetName } from './datasets';
 export { cartLine, cartLineTexts, cartTotal } from './factories/product.factory';
+export { expectedAddressLines, type AddressSource } from './factories/address.factory';
 export { credentialsOf, unregisteredCredentials, wrongPasswordFor } from './factories/credentials.factory';
 export {
   buildUserAccount,

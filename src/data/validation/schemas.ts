@@ -4,6 +4,7 @@ import type {
   InvalidCredentialsCase,
   PaymentCard,
   Product,
+  ProductCategory,
   ProductSearchCase,
   UserAccount,
 } from '../types';
@@ -87,6 +88,16 @@ export const productSearchCaseSchema: Schema<ProductSearchCase> = object({
   id: caseId,
   description: nonEmptyString(),
   term: nonEmptyString(),
+  expectedProducts: arrayOf(nonEmptyString(), { minLength: 1 }),
+});
+
+export const productCategorySchema: Schema<ProductCategory> = object({
+  id: caseId,
+  description: nonEmptyString(),
+  section: oneOf(['Women', 'Men', 'Kids'] as const),
+  name: nonEmptyString(),
+  categoryId: integer({ min: 1 }),
+  heading: nonEmptyString({ pattern: /^(?:Women|Men|Kids) - \S.* Products$/, description: 'a heading like "Women - Dress Products"' }),
   expectedProducts: arrayOf(nonEmptyString(), { minLength: 1 }),
 });
 
