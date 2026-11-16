@@ -13,6 +13,7 @@ import {
   pageSnapshotSection,
   type FailureClassification,
 } from '../errors/failure-classification';
+import { redactSecrets, redactTypedValues } from '../utils/redaction';
 import { stripAnsi } from '../utils/text';
 
 /**
@@ -60,6 +61,17 @@ export interface FailureClassificationReport {
 
 const DEFAULT_OUTPUT = 'reports/failure-classification.json';
 const EXCERPT_LENGTH = 400;
+
+/**
+ * Excerpt of the first error, WITHOUT secrets (INC-2026-11-16). A failed
+ * `fill(password)` prints the typed value in Playwright's call log, and this
+ * JSON is published by CI: typed values, SQAF-generated passwords and
+ * form/JSON/header secret pairs are redacted BEFORE truncation, so a value is
+ * never kept in part. Classification uses the original text.
+ */
+export function redactExcerpt(message: string): string {
+  return redactSecrets(redactTypedValues(message)).slice(0, EXCERPT_LENGTH);
+}
 const NOTE = 'Informational classification. Test statuses, retries and the exit code are not modified.';
 
 function readErrorContext(result: TestResult): string | undefined {
@@ -148,7 +160,7 @@ export default class FailureClassificationReporter implements Reporter {
       status: result.status,
       classification,
       evidence,
-      errorExcerpt: (messages[0] ?? '').slice(0, EXCERPT_LENGTH),
+      errorExcerpt: redactExcerpt(messages[0] ?? ''),
     });
   }
 

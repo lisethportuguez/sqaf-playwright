@@ -20,6 +20,7 @@ export {
   generatedPasswordPattern,
   REDACTED,
   redactSecrets,
+  redactTypedValues,
   redactValues,
   SECRET_KEY,
 } from './redaction';

@@ -2,11 +2,13 @@ import { existsSync, readFileSync } from 'node:fs';
 import { expect, test, type TestInfo } from '@playwright/test';
 import type { FullConfig, FullResult } from '@playwright/test/reporter';
 import FailureClassificationReporter, {
+  redactExcerpt,
   renderStepSummary,
   type FailureClassificationReport,
 } from '../../../src/reporting/failure-classification-reporter';
 import { emptyClassificationCounts } from '../../../src/errors/failure-classification';
 import { readJson, runPlaywright } from '../support/run-playwright';
+import type { TestCase, TestResult } from '@playwright/test/reporter';
 
 /**
  * The reporter is exercised end to end: a child Playwright run executes four
@@ -137,4 +139,81 @@ test('renders a job summary for a run without failures', () => {
   });
   expect(markdown).toContain('### SQAF failure classification (baseline)');
   expect(markdown).toContain('No failed attempts.');
+});
+
+/*
+ * INC-2026-11-16: the classification JSON is published by CI, and a failed
+ * `fill(password)` prints the typed value in Playwright's call log. The
+ * excerpt is redacted; the values below are fake and built at runtime.
+ */
+test.describe('errorExcerpt never contains typed values or generated passwords', () => {
+  const secret = ['Sqaf', '#', 'b2c4e6f8-0a1b-4c3d-9e8f-7a6b5c4d3e2f'].join('');
+  const generated = ['Sqaf', '#', 'Ab3_dE5-gH7iJ9kL'].join('');
+  const typed = `typed-${Date.now().toString(36)}`;
+
+  // Call log printed by Playwright 1.65 when fill fails after resolving the element (observed locally).
+  const FILL_FAILURE = [
+    'Error: locator.fill: Error: Element is not an <input>, <textarea> or [contenteditable] element',
+    'Call log:',
+    "  - waiting for locator('[data-qa=\"password\"]')",
+    "    - locator resolved to <h2>Enter Account Information</h2>",
+    `    - fill("${secret}")`,
+    '  - attempting fill action',
+  ].join('\n');
+
+  test('fill, type and pressSequentially values are redacted', () => {
+    const excerpt = redactExcerpt(
+      [FILL_FAILURE, `  - type("${typed}")`, `  - pressSequentially('${typed}')`, `Fill "${typed}" locator('#x')`].join('\n'),
+    );
+    expect(excerpt).toContain('fill("[REDACTED]")');
+    expect(excerpt).toContain('type("[REDACTED]")');
+    expect(excerpt).toContain("pressSequentially('[REDACTED]')");
+    expect(excerpt).toContain('Fill "[REDACTED]"');
+    expect(excerpt).not.toContain(secret);
+    expect(excerpt).not.toContain(typed);
+  });
+
+  test('generated passwords are redacted in full, also when longer than 16 characters', () => {
+    const excerpt = redactExcerpt(`Expected: "${generated}"\nReceived: "${secret}"`);
+    expect(excerpt).toBe('Expected: "[REDACTED]"\nReceived: "[REDACTED]"');
+  });
+
+  test('redaction happens before truncation: no partial value at the end of the excerpt', () => {
+    const excerpt = redactExcerpt(`${'x'.repeat(380)} - fill("${secret}")`);
+    expect(excerpt.length).toBeLessThanOrEqual(400);
+    expect(excerpt).not.toContain(secret.slice(0, 12));
+  });
+
+  test('ordinary diagnostics are kept', () => {
+    const message = "Error: expect(locator).toBeVisible() failed\n\nLocator: getByText('Account Created!')\nExpected: visible";
+    expect(redactExcerpt(message)).toBe(message);
+  });
+
+  test('the final JSON contains no sensitive input value', async ({}, testInfo) => {
+    const outputFile = testInfo.outputPath('redacted.json');
+    const reporter = new FailureClassificationReporter({ outputFile });
+    reporter.onBegin({ rootDir: process.cwd(), projects: [{ name: 'baseline' }] } as unknown as FullConfig);
+    const fakeTest = {
+      titlePath: () => ['', 'baseline', 'baseline.spec.ts', 'TC1 - Register User', 'registers a new user through the UI'],
+      parent: { project: () => ({ name: 'baseline' }) },
+      location: { file: `${process.cwd()}/baseline/baseline.spec.ts`, line: 1, column: 1 },
+    } as unknown as TestCase;
+    const fakeResult = {
+      status: 'failed',
+      retry: 0,
+      errors: [{ message: FILL_FAILURE }, { message: `Expected: "${generated}"` }],
+      attachments: [],
+    } as unknown as TestResult;
+    reporter.onTestEnd(fakeTest, fakeResult);
+    reporter.onEnd({ status: 'failed' } as FullResult);
+
+    const text = readFileSync(outputFile, 'utf8');
+    expect(text).not.toContain(secret);
+    expect(text).not.toContain(generated);
+    const report = JSON.parse(text) as FailureClassificationReport;
+    expect(report.failures).toHaveLength(1);
+    expect(report.failures[0]!.errorExcerpt).toContain('fill("[REDACTED]")');
+    // The classification itself is unchanged by the redaction.
+    expect(report.failures[0]!.status).toBe('failed');
+  });
 });
