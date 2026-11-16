@@ -108,3 +108,10 @@ Una mutación controlada (trace `on-first-retry` y `expect` de 10 s en la línea
 - Toda la configuración se obtiene de `config/index.ts` y se valida al arrancar.
 - Cambiar una condición de la línea base exige modificar el contrato, lo que hace visible el cambio en la revisión. Solo debe hacerse con un ADR aprobado.
 - La configuración global es más explícita: cada proyecto declara su `use`, timeouts y evidencias.
+
+## Evolución (E3)
+
+[ADR-0009](ADR-0009-test-data-management.md) añade dos módulos a la capa, sin cambiar los existentes:
+
+- `config/test-data.ts`: raíz de los datasets JSON, expuesta como `sqafConfig.testData.rootDir`.
+- `SQAF_API_TIMEOUT` (15 s) en `config/timeouts.ts`, expuesto como `sqafConfig.api.timeout`. Es independiente de `TimeoutPolicy`, así que los timeouts de navegador de SQAF y de la línea base no cambian, y sus contratos siguen en verde.

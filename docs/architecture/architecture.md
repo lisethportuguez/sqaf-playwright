@@ -1,6 +1,6 @@
 # Arquitectura de SQAF
 
-> **Estado del documento:** Etapa 2. Describe la arquitectura **objetivo** (diseñada) y el estado **real** de la implementación. Están implementadas la capa de configuración (E1) y las capas de Page Objects y fixtures (E2). De las capas de errores, utilidades y reporting solo existen los componentes de detección y clasificación de fallos de infraestructura (ADR-0006).
+> **Estado del documento:** Ciclo 1 (E5 + E3), en revisión en la rama `stage/3-5-data-utils-errors`. Describe la arquitectura **objetivo** (diseñada) y el estado **real** de la implementación. Están implementadas la configuración (E1), los Page Objects y las fixtures (E2), las utilidades comunes y el manejo de errores con la taxonomía completa (E5, ADR-0008) y la gestión de datos de prueba con aprovisionamiento de cuentas por API (E3, ADR-0009). Del reporting solo existe el reporter de clasificación de fallos.
 
 ## 1. Propósito
 
@@ -33,11 +33,12 @@ flowchart LR
 | Configuration | Configuración centralizada: base URL, proyectos, workers, retries, evidencias, reporters, variables de entorno | `playwright.config.ts`, `config/` | **Implemented (E1)**: entornos, variables, timeouts, evidencias, firmas anti-bot y aislamiento de la línea base (ADR-0005) |
 | Test Layer | Escenarios por funcionalidad, aserciones, tags, trazabilidad | `tests/` | Planned (E4). En E2 existe `tests/integration/`, que verifica Page Objects y fixtures (no son los 15 escenarios) |
 | Page Object Layer | Locators, acciones de usuario en lenguaje de negocio, componentes | `src/pages/` | **Implemented (E2)**: `BasePage`, 3 componentes y 8 páginas (ADR-0007) |
-| Fixtures Layer | Inyección de Page Objects y datos, setup y teardown, punto único de importación | `src/fixtures/` | **Implemented (E2)**: bloqueo de anuncios automático, 8 fixtures de Page Objects y `@sqaf/fixtures`. Fixtures de datos y cuentas Planned (E3) |
-| Test Data Management | Datos externos en JSON, tipos, validación, DDT, cuentas por API | `src/data/`, `test-data/`, `src/api/` | Planned (E3) |
-| Common Utilities | Funciones auxiliares independientes del negocio | `src/utils/` | **Parcial (E1)**: detector anti-bot puro (`anti-bot-detector.ts`). Resto Planned (E3/E5) |
-| Error Handling | Errores contextualizados y clasificación de fallos | `src/errors/` | **Parcial (E1)**: `InfrastructureError`, guard anti-bot y clasificación `infrastructure/anti-bot-challenge` (ADR-0006). Taxonomía completa Planned (E5) |
-| Reporting & Metrics | Reportes nativos, evidencias, historial, métricas | `src/reporting/`, `metrics/` | **Parcial (E1)**: reporter de clasificación de fallos. Resto Planned (E6) |
+| Fixtures Layer | Inyección de Page Objects y datos, setup y teardown, punto único de importación | `src/fixtures/` | **Implemented (E2, E3)**: bloqueo de anuncios automático, 8 fixtures de Page Objects, `userProfile`, `accountApi`, `newUserData`, `testUser` y `@sqaf/fixtures` |
+| Test Data Management | Datos externos en JSON, tipos, validación, DDT, factories y providers | `src/data/`, `test-data/` | **Implemented (E3)**: 5 datasets, esquemas sin dependencias, providers tipados y factories (ADR-0009) |
+| Account API | Aprovisionamiento y limpieza de cuentas por la API del SUT | `src/api/` | **Implemented (E3)**: `AccountApiClient` (crear, consultar, eliminar) |
+| Common Utilities | Funciones auxiliares independientes del negocio | `src/utils/` | **Implemented (E1, E5)**: detector anti-bot, texto, precios, ids y e-mails únicos, duraciones, *type guards* (ADR-0008) |
+| Error Handling | Errores contextualizados y clasificación de fallos | `src/errors/` | **Implemented (E1, E5)**: `SqafError`, `InfrastructureError`, `DataValidationError`, `ApiError`, guard anti-bot y taxonomía de 8 clasificaciones (ADR-0006, ADR-0008) |
+| Reporting & Metrics | Reportes nativos, evidencias, historial, métricas | `src/reporting/`, `metrics/` | **Parcial (E1, E5)**: reporter de clasificación de fallos con la taxonomía completa. Resto Planned (E6) |
 
 ## 4. Componentes existentes (Etapas 0, 1 y 2)
 
@@ -177,9 +178,82 @@ flowchart LR
 | `tests/integration/fixtures/anti-bot.spec.ts` | Desafío simulado con `page.route()`: `open()` y `waitUntilReady()` lanzan `InfrastructureError` (`infrastructure/anti-bot-challenge`). Una página que no es un desafío no se clasifica | No |
 | `tests/integration/pages/base-page.spec.ts` | `waitUntilReady()` no termina antes del evento `load` | No |
 | `tests/integration/pages/{auth,products,cart}.spec.ts` | Page Objects y componentes contra el SUT, reutilización del header y de `ProductCard`, y carrito vacío en un test nuevo | Sí |
+| `tests/integration/data/data-driven.spec.ts` (E3) | DDT: 3 credenciales inválidas y 2 búsquedas, generadas desde JSON | Sí |
+| `tests/integration/data/account-api.spec.ts` (E3) | Ciclo crear → consultar → eliminar del cliente de API, y `testUser` con login por la UI | Sí (2 cuentas) |
+| `tests/unit/{errors,utils}/*` (E5) | Jerarquía de errores, taxonomía con prioridad y casos negativos, sección de snapshot, utilidades | No |
+| `tests/unit/{data,api}/*` (E3) | Esquemas, providers (datasets reales y archivos sintéticos), factories, compatibilidad de tipos D9, DDT y cliente de API con un `request` simulado | No |
 | `tests/unit/architecture/dependency-rule.spec.ts` | Regla de dependencias entre capas y ausencia de localizadores crudos en las suites | No |
 | `tests/unit/config/sqaf-projects-contract.spec.ts` | Los proyectos SQAF usan la configuración de E1 más `data-qa`; `baseline` no | No |
 | `tests/unit/ci/workflow-steps.spec.ts` | Orden de los pasos de CI y salidas separadas de la integración | No |
+
+### 4.9 Manejo de errores y utilidades (`src/errors/`, `src/utils/`, E5)
+
+```mermaid
+classDiagram
+    class Error
+    class ConfigurationError
+    class SqafError {
+      <<abstract>>
+      +classification
+      +category
+      +summary
+      +context
+      +evidence
+    }
+    Error <|-- ConfigurationError
+    Error <|-- SqafError
+    SqafError <|-- InfrastructureError
+    SqafError <|-- DataValidationError
+    SqafError <|-- ApiError
+```
+
+| Clasificación | Quién la asigna |
+|---|---|
+| `infrastructure/anti-bot-challenge` | Guard de navegación y cliente de API (error propio); regla de E1 sobre el texto del fallo |
+| `infrastructure/network` | Cliente de API (sin respuesta); `net::ERR_*` (excepto `ERR_BLOCKED_BY_CLIENT`) y errores de *socket* o DNS en el texto |
+| `infrastructure/sut-unavailable` | Cliente de API (HTTP 5xx); página 5xx o 52x en el mensaje o en el snapshot |
+| `test-data/invalid` | `DataValidationError` (providers, factories) |
+| `api/request-failed` | `ApiError` (cliente de API) |
+| `automation/locator-timeout` | Acción de Playwright con *timeout* mientras espera un localizador |
+| `assertion/mismatch` | `expect(...)` fallido |
+| `unclassified` | El resto |
+
+La prioridad y los cambios respecto de E1 están en [ADR-0008](decisions/ADR-0008-error-handling-utilities.md). `ConfigurationError` vive en `config/` (la capa transversal no importa ninguna otra) y se reexporta desde `src/errors`.
+
+Utilidades (`src/utils/index.ts`): `parsePrice`/`formatPrice`, `createIdSource`/`uniqueId`/`uniqueEmail`/`randomSecret`, `formatDuration`, `normalizeText`/`stripAnsi`/`containsText`/`htmlTitle`/`htmlText`, *type guards* (`isRecord`, `isNonEmptyString`, `isInteger`, `describeValue`) y el detector anti-bot. Todas son puras, salvo las fuentes de aleatoriedad (`createRunToken`, `randomSecret`), que están aisladas.
+
+### 4.10 Gestión de datos de prueba y cuentas (`test-data/`, `src/data/`, `src/api/`, E3)
+
+```mermaid
+flowchart LR
+    JSON[test-data/*.json] --> PROV[providers<br/>carga perezosa · validación · freeze]
+    SCH[validation<br/>esquemas] --> PROV
+    CAT[datasets<br/>archivo + esquema] --> PROV
+    PROV --> FAC[factories<br/>usuarios · credenciales · carrito]
+    PROV --> IDX["@sqaf/fixtures<br/>testData · caseTitle"]
+    FAC --> FX[data.fixture<br/>newUserData · testUser]
+    API[src/api<br/>AccountApiClient] --> FX
+    FX --> IDX
+    IDX --> S[Suites · DDT]
+```
+
+| Dataset | Contenido | Uso |
+|---|---|---|
+| `users/account-profiles.json` | 2 perfiles reutilizables (uno sin campos opcionales) | Base de `newUserAccount`; opción `userProfile` |
+| `users/invalid-credentials.json` | 3 credenciales que el SUT debe rechazar | DDT de login inválido |
+| `products/catalog.json` | 4 productos (de `GET /api/productsList`) | Valores esperados de catálogo y carrito |
+| `products/search-terms.json` | 2 términos con sus productos exactos | DDT de búsqueda |
+| `checkout/payment-cards.json` | 1 tarjeta ficticia de prueba | Checkout (E4) |
+
+**Ciclo de vida de `testUser`:**
+
+1. Se genera un usuario único (`newUserAccount`, perfil `userProfile`).
+2. Se crea con la API 11. Si la creación falla, se intenta borrarlo y se relanza el error original.
+3. El test lo recibe.
+4. En el teardown se borra con la API 12 (`deleted` o `not-found`, idempotente) y se verifica con la API 14 que ya no existe.
+5. Se adjunta `sqaf-account-cleanup`. Si la cuenta sigue existiendo, el test falla con un `ApiError` que incluye el e-mail.
+
+`newUserData` hace lo mismo sin el paso 2: es para el registro por la UI, y su teardown borra la cuenta por si el test la creó.
 
 ## 5. Flujo de ejecución actual
 
@@ -212,3 +286,28 @@ Son hallazgos observados en la Etapa 0, con evidencia en [E0-baseline-runs.md](.
 - **Nombres accesibles con glifos de icono** (observado en E2). Los enlaces del header y "View Product" incluyen un carácter de fuente de iconos antes del texto, así que el nombre de "Home" no es exactamente `Home`. **Implicación:** se usan patrones anclados (`/^\W*Home$/`) en lugar de `exact: true`.
 - **Controles sin semántica** (observado en E2). "Add to cart" es un `<a>` sin `href` (sin rol `link`) que el overlay de la tarjeta duplica, y el botón de búsqueda solo tiene un icono (sin nombre accesible ni `data-qa`). **Implicación:** CSS justificado y acotado en `ProductCard` y `ProductsPage` (ADR-0007).
 - **Desafío anti-bot de Cloudflare en CI** (observado después de E0). El SUT respondió de forma intermitente a los runners de GitHub con una página de verificación (`One moment, please...`) en lugar de la aplicación: runs `43690859628` (intento 1) y `43691579360`. **Implicación:** detección y clasificación como fallo de infraestructura desde E1, sin evasión ni reintentos especiales ([ADR-0006](decisions/ADR-0006-infrastructure-failure-classification.md)); menos ejecuciones innecesarias contra el SUT mediante filtros de rutas en CI ([ADR-0003](decisions/ADR-0003-ci-github-actions.md)).
+- **La API del SUT responde siempre HTTP 200** (observado en E3, 2026-11-15). Incluso para errores, con `Content-Type: text/html`; el resultado real es el campo `responseCode` del cuerpo JSON (por ejemplo, `404` para una cuenta inexistente). **Implicación:** `AccountApiClient` valida el cuerpo, no el estado HTTP, y solo trata un estado 5xx como infraestructura ([ADR-0009](decisions/ADR-0009-test-data-management.md)).
+
+## 7. Correspondencia con la estructura metodológica del TFG
+
+El marco metodológico del TFG define un árbol de referencia plano. El repositorio **no** lo reproduce literalmente: implementa las mismas responsabilidades como capas con una regla de dependencias verificada (§2), lo que añade separación entre los datos y su acceso, una capa de API y una capa de errores explícita. La correspondencia es directa:
+
+| Estructura metodológica | Implementación real | Etapa | Estado |
+|---|---|---|---|
+| `tests/authentication/` | `tests/e2e/authentication/` | E4 | Planned (la `testDir` de los proyectos `chromium`, `firefox` y `webkit` ya es `tests/e2e`) |
+| `tests/products/` | `tests/e2e/products/` | E4 | Planned |
+| `tests/checkout/` | `tests/e2e/checkout/` | E4 | Planned |
+| — (verificación del propio framework) | `tests/unit/`, `tests/integration/` | E1–E3, E5 | Implemented |
+| `pages/` | `src/pages/` (+ `components/`) | E2 | Validated |
+| `data/` | `test-data/` (JSON) + `src/data/` (tipos, validación, datasets, providers, factories) | E3 | Implemented, validado en local |
+| — (aprovisionamiento de datos) | `src/api/` | E3 | Implemented, validado en local |
+| `fixtures/` | `src/fixtures/` | E2, E3 | Implemented |
+| `utils/` | `src/utils/` (utilidades) y `src/errors/` (manejo de errores) | E1, E5 | Implemented |
+| `config/` | `config/` | E1 | Validated |
+| `reports/` | `reports/` (clasificación de fallos), `playwright-report/`, `src/reporting/` | E1, E6 | Parcial |
+| `test-results/` | `test-results/` (evidencias de Playwright) | E0 | Generado, no versionado |
+| `playwright.config.ts`, `package.json`, `tsconfig.json`, `.gitignore`, `README.md` | Los mismos archivos en la raíz | E0 | Validated |
+| — (línea base del experimento) | `baseline/` | E0 | Validated, congelada |
+| — (evidencias) | `metrics/` | E0– | Implemented |
+
+`src/` agrupa el código del framework para separarlo de las pruebas, de los datos y de la documentación. El alias `@sqaf/*` (ADR-0004) mantiene cortas las importaciones.

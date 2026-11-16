@@ -9,9 +9,9 @@ A multi-layer functional test automation framework built with **Playwright** and
 
 SQAF is developed as the practical component of an undergraduate thesis (TFG) in Software Quality Management Engineering, and as a professional portfolio project.
 
-> **Project status: Stage 2 — Page Objects and fixtures — in review (PR into `main`).** Stage 0 is closed and tagged `v0.1.0`; Stage 1 is closed, merged into `main` and tagged `v0.2.0`.
-> Evidence: Stage 0 in [E0-baseline-runs.md](docs/validation/E0-baseline-runs.md), Stage 1 in [E1-configuration.md](docs/validation/E1-configuration.md), Stage 2 in [E2-page-objects-fixtures.md](docs/validation/E2-page-objects-fixtures.md).
-> Stage 2 adds the Page Object layer (a small `BasePage`, three reusable components and eight pages), the fixtures layer (automatic ad blocking and one fixture per Page Object) and an `integration` project that verifies them. Test data management and the 15 SQAF functional scenarios are **not implemented yet**. See [Roadmap](#roadmap).
+> **Project status: Cycle 1 — Stage 5 (common utilities and error handling) + Stage 3 (test data management) — in development on `stage/3-5-data-utils-errors`, not merged.** Stages 0, 1 and 2 are closed, merged into `main` and tagged `v0.1.0`, `v0.2.0` and `v0.3.0`.
+> Evidence: Stage 0 in [E0-baseline-runs.md](docs/validation/E0-baseline-runs.md), Stage 1 in [E1-configuration.md](docs/validation/E1-configuration.md), Stage 2 in [E2-page-objects-fixtures.md](docs/validation/E2-page-objects-fixtures.md), Stage 5 in [E5-utilities-error-handling.md](docs/validation/E5-utilities-error-handling.md), Stage 3 in [E3-test-data-management.md](docs/validation/E3-test-data-management.md).
+> Cycle 1 adds the error hierarchy and the full failure taxonomy, common utilities, JSON datasets with typed providers and runtime validation, data factories, data-driven tests and API account provisioning with verified cleanup. The 15 SQAF functional scenarios are **not implemented yet** (Stage 4). See [Roadmap](#roadmap).
 
 ---
 
@@ -31,7 +31,7 @@ SQAF targets 15 of those test cases (see [ADR-0002](docs/architecture/decisions/
 
 ## Architecture
 
-Target architecture (see [architecture.md](docs/architecture/architecture.md)). Implemented so far: Configuration (Stage 1), Page Objects and Fixtures (Stage 2), and the infrastructure-failure parts of Error Handling and Reporting (Stage 1).
+Target architecture (see [architecture.md](docs/architecture/architecture.md)). Implemented so far: Configuration (Stage 1), Page Objects and Fixtures (Stage 2), Test Data Management and the Account API (Stage 3), Common Utilities and Error Handling (Stage 5), and the failure-classification part of Reporting (Stages 1 and 5).
 
 ```mermaid
 flowchart LR
@@ -39,11 +39,15 @@ flowchart LR
     T[Test Layer] --> FX[Fixtures]
     FX --> PO[Page Objects]
     FX --> TDM[Test Data Management]
-    PO --> U[Common Utilities]
+    FX --> API[Account API]
     PO --> E[Error Handling]
     TDM --> E
+    API --> E
+    E --> U[Common Utilities]
     T -. results .-> R[Reporting & Metrics]
 ```
+
+The thesis methodology describes a flat reference tree (`tests/authentication`, `tests/products`, `tests/checkout`, `pages/`, `data/`, `fixtures/`, `utils/`, `config/`, `reports/`, `test-results/`). The repository implements the same responsibilities as layers under `src/` plus `test-data/`; the correspondence table is in [architecture.md §7](docs/architecture/architecture.md#7-correspondencia-con-la-estructura-metodológica-del-tfg).
 
 ## Technology stack
 
@@ -58,7 +62,7 @@ No additional runtime dependencies are used.
 
 ## Project structure
 
-Current structure (Stage 2):
+Current structure (Stages 0–3 and 5):
 
 ```
 .
@@ -69,7 +73,8 @@ Current structure (Stage 2):
 │   ├── index.ts               # sqafConfig: single, validated, frozen entry point
 │   ├── environments.ts        # Environment catalogue (production)
 │   ├── environment.ts         # SQAF_ENV / SQAF_BASE_URL validation, optional .env
-│   ├── timeouts.ts            # SQAF and baseline timeouts
+│   ├── timeouts.ts            # SQAF, baseline and API timeouts
+│   ├── test-data.ts           # Location of the JSON datasets
 │   ├── evidence.ts            # Trace / screenshot / video policy
 │   ├── anti-bot.ts            # Observed Cloudflare challenge signatures
 │   ├── locators.ts            # Locator policy (testIdAttribute: data-qa)
@@ -77,13 +82,19 @@ Current structure (Stage 2):
 ├── src/
 │   ├── pages/                 # Page Objects: BasePage, 8 pages
 │   │   └── components/        # Header, ProductCard, CartModal
-│   ├── fixtures/              # Ad blocking + Page Object fixtures (single import: @sqaf/fixtures)
-│   ├── errors/                # InfrastructureError, anti-bot guard, failure classification
+│   ├── fixtures/              # Ad blocking, Page Object, data and account fixtures (single import: @sqaf/fixtures)
+│   ├── data/                  # Test Data Management: types, validation, datasets, providers, factories
+│   ├── api/                   # Account API client (create / find / delete)
+│   ├── errors/                # SqafError hierarchy, anti-bot guard, failure taxonomy
 │   ├── reporting/             # Failure classification reporter
-│   └── utils/                 # Pure anti-bot challenge detector
+│   └── utils/                 # Pure helpers: text, price, unique ids, durations, guards, anti-bot detector
+├── test-data/                 # Static JSON datasets
+│   ├── users/                 # Account profiles, invalid credentials
+│   ├── products/              # Catalog subset, search terms
+│   └── checkout/              # Test payment cards
 ├── tests/
 │   ├── unit/                  # Framework unit tests (no browser, no SUT)
-│   ├── integration/           # Page Object and fixture tests (Chromium)
+│   ├── integration/           # Page Object, fixture, data-driven and account tests (Chromium)
 │   └── e2e/                   # SQAF suites (from Stage 4)
 ├── docs/                      # Internal documentation (Spanish)
 ├── metrics/
@@ -142,6 +153,33 @@ test('search products', async ({ homePage, productsPage }) => {
 - `open()` and `waitUntilReady()` wait for the `load` event, fail with an `InfrastructureError` if the SUT answers with its anti-bot challenge, and then check the page's own readiness marker.
 - Page Objects expose locators and business actions; assertions stay in the tests. See [ADR-0007](docs/architecture/decisions/ADR-0007-page-objects-fixtures.md).
 
+### Test data and data-driven tests
+
+Static data lives in JSON files under `test-data/`, is validated at load time (any structural problem raises a `DataValidationError` that lists every issue) and reaches the suites through `@sqaf/fixtures`. A data-driven test is a plain loop: Playwright generates one test per dataset case.
+
+```ts
+import { caseTitle, expect, test, testData } from '@sqaf/fixtures';
+
+for (const credentials of testData.invalidCredentials.all()) {
+  test(caseTitle('rejects an invalid login', credentials), async ({ signupLoginPage }) => {
+    await signupLoginPage.open();
+    await signupLoginPage.login(credentials);
+    await expect(signupLoginPage.loginError).toHaveText(credentials.expectedError);
+  });
+}
+```
+
+Users come from fixtures:
+
+| Fixture | Provides | Cleanup |
+|---|---|---|
+| `newUserData` | A unique, validated user that does **not** exist yet (for UI registration) | Deletes the account through the API in case the test registered it |
+| `testUser` | A unique user **created through the API** before the test | Deletes it through the API and verifies that it no longer exists |
+| `accountApi` | The account API client | — |
+| `userProfile` (option) | Profile used by both user fixtures: `test.use({ userProfile: 'united-states-minimal' })` | — |
+
+E-mails are always synthetic (`sqaf.<id>@example.com`); passwords are random and never logged. See [ADR-0009](docs/architecture/decisions/ADR-0009-test-data-management.md).
+
 ## Execution commands
 
 | Command | Description |
@@ -149,7 +187,7 @@ test('search products', async ({ homePage, productsPage }) => {
 | `npm run typecheck` | TypeScript type checking (`tsc --noEmit`) |
 | `npm run test:unit` | Runs the framework unit tests (no browser, no SUT) |
 | `npm run test:baseline` | Runs the 5 baseline scenarios on Chromium |
-| `npm run test:integration` | Runs the Page Object and fixture integration tests on Chromium |
+| `npm run test:integration` | Runs the integration tests on Chromium (Page Objects, fixtures, data-driven tests and account provisioning; 2 tests create and delete one account each) |
 | `npm test` | Runs all Playwright projects (currently the unit tests, the baseline and the integration tests) |
 | `npm run report` | Opens the last HTML report |
 
@@ -157,7 +195,20 @@ test('search products', async ({ homePage, productsPage }) => {
 
 Playwright's HTML report is generated in `playwright-report/` (not versioned). In CI it is uploaded as a workflow artifact.
 
-Every failed attempt is also classified by an observer reporter (`infrastructure/anti-bot-challenge` or `unclassified`) and written to the console, to `reports/failure-classification.json` and, in CI, to the job summary. The classification never changes test statuses, retries or the exit code. See [ADR-0006](docs/architecture/decisions/ADR-0006-infrastructure-failure-classification.md).
+Every failed attempt is also classified by an observer reporter and written to the console, to `reports/failure-classification.json` and, in CI, to the job summary. Since Stage 5 the taxonomy is:
+
+| Classification | Meaning |
+|---|---|
+| `infrastructure/anti-bot-challenge` | The SUT answered with its Cloudflare challenge page |
+| `infrastructure/network` | Network or DNS failure (`net::ERR_*`, `ECONNREFUSED`, `getaddrinfo ...`) |
+| `infrastructure/sut-unavailable` | 5xx error page or answer of the SUT |
+| `test-data/invalid` | A dataset or factory result failed its validation (`DataValidationError`) |
+| `api/request-failed` | The SUT API answered unexpectedly (`ApiError`) |
+| `automation/locator-timeout` | A Playwright action timed out waiting for a locator |
+| `assertion/mismatch` | A failed `expect(...)` assertion |
+| `unclassified` | Anything else |
+
+The classification never changes test statuses, retries or the exit code. See [ADR-0006](docs/architecture/decisions/ADR-0006-infrastructure-failure-classification.md) and [ADR-0008](docs/architecture/decisions/ADR-0008-error-handling-utilities.md).
 
 Multi-format reporting and a custom metrics reporter are planned for Stage 6.
 
@@ -195,9 +246,12 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 | 2 | Anti-bot guard wired into page navigation | Validated with a simulated challenge (offline); not yet exercised against a live challenge |
 | 2 | Layer dependency rule check | Validated (unit test with controlled mutations) |
 | 2 | CI integration step with separate artifacts | Validated (CI run [43755588344](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43755588344)); integration failure-evidence artifact not yet exercised |
-| 3 | Test Data Management (JSON, typed data, API user provisioning) | Planned |
+| 3 | Test Data Management: JSON datasets, runtime validation, typed providers, factories | Validated locally (unit tests; datasets used by integration tests); CI pending |
+| 3 | Data-driven tests (invalid credentials, product search, user profiles) | Validated locally (5 SUT cases + offline cases); CI pending |
+| 3 | Account API client and `newUserData` / `testUser` fixtures with verified cleanup | Validated locally (2 SUT tests, cleanup verified through the API); CI pending |
 | 4 | Test layer — 15 functional scenarios, tags, traceability | Planned |
-| 5 | Common utilities and error handling | Planned |
+| 5 | Error hierarchy (`SqafError`, `DataValidationError`, `ApiError`) and full failure taxonomy | Validated locally (unit tests); CI pending; not yet observed on real infrastructure failures except one local DNS failure |
+| 5 | Common utilities (price, unique ids/e-mails, text, durations, guards) | Validated locally (unit tests); CI pending |
 | 6 | Reporting and metrics (HTML, JSON, JUnit, MetricsReporter) | Planned |
 | 7 | Experimental validation and results | Planned |
 
@@ -206,7 +260,8 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 - The SUT is a public third-party website: availability and content are outside the project's control.
 - Advertising hosts are blocked during test execution, so tests do not reproduce the exact ad-supported user experience.
 - Only Chromium is used so far; Firefox and WebKit projects are defined but have no tests until Stage 4.
-- Stage 2 creates no accounts: the account confirmation pages, logout and account deletion are implemented but not yet exercised against the SUT (Stages 3–4).
+- Account confirmation pages, logout and account deletion through the UI are implemented but not yet exercised against the SUT (Stage 4). Since Stage 3, two integration tests create one synthetic account each through the API and delete it in the same run.
+- Playwright traces are kept on failure (Stage 1 evidence policy). A trace of a failed test that uses an account contains that synthetic account's random password; the account is deleted at the end of the test.
 - The SUT is served through Cloudflare and may answer CI runners with an anti-bot challenge page. Such failures are detected and classified as infrastructure failures, but they still fail the run: SQAF does not try to bypass the challenge.
 
 ## Documentation
@@ -216,11 +271,13 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 - [Stage 0 validation records](docs/validation/E0-baseline-runs.md)
 - [Stage 1 validation records](docs/validation/E1-configuration.md)
 - [Stage 2 validation records](docs/validation/E2-page-objects-fixtures.md)
+- [Stage 5 validation records](docs/validation/E5-utilities-error-handling.md)
+- [Stage 3 validation records](docs/validation/E3-test-data-management.md)
 - [Stage 0 baseline evidence](metrics/experiments/E0-baseline/)
 
 ## Versioning
 
-Repository milestones are marked with Git tags (`v0.1.0` Stage 0, `v0.2.0` Stage 1). The `version` field in `package.json` is intentionally left at `0.1.0`: the package is private and never published, and changing the field would also rewrite `package-lock.json`, which is kept unchanged across stages. Tags, not `package.json`, identify each stage.
+Repository milestones are marked with Git tags (`v0.1.0` Stage 0, `v0.2.0` Stage 1, `v0.3.0` Stage 2). The `version` field in `package.json` is intentionally left at `0.1.0`: the package is private and never published, and changing the field would also rewrite `package-lock.json`, which is kept unchanged across stages. Tags, not `package.json`, identify each stage.
 
 ## License
 
