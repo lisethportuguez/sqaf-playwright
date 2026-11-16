@@ -75,3 +75,12 @@ Todo lo que no es un desafío queda `unclassified`. La taxonomía completa (auto
 - Un fallo de CI provocado por el desafío se identifica de inmediato en el resumen del job.
 - En la Etapa 7, los intentos clasificados como infraestructura podrán analizarse por separado, dejando constancia de la separación. Nunca se eliminarán de los datos.
 - Si el SUT cambia la página de desafío, las nuevas firmas se añadirán a `config/anti-bot.ts` solo cuando se observen, con su evidencia.
+
+## Evolución (E5)
+
+[ADR-0008](ADR-0008-error-handling-utilities.md) amplía esta decisión sin cambiarla:
+
+- La regla anti-bot conserva sus firmas, su prioridad (es la primera) y todas sus pruebas negativas.
+- La taxonomía pasa de 2 a 8 clasificaciones, y el informe pasa a `schemaVersion: 2`.
+- `InfrastructureError` hereda de `SqafError` y conserva el formato exacto de su mensaje.
+- Se corrigió un defecto latente: el reporter pasaba al clasificador el `error-context` completo, que en Playwright 1.65 incluye el código fuente del test. Desde E5 solo se usa la sección `# Page snapshot`.

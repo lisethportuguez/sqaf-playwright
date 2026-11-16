@@ -1,0 +1,150 @@
+# Validación E5: utilidades comunes y manejo de errores
+
+- **Etapa:** E5 (ciclo 1, junto con E3). Se ejecutó **antes** que E3 porque E3 usa sus errores.
+- **Rama:** `stage/3-5-data-utils-errors` (creada desde `main` en `403115f`, merge de E2, tag `v0.3.0`)
+- **Fecha:** 2026-11-15
+- **Decisiones:** [ADR-0008](../architecture/decisions/ADR-0008-error-handling-utilities.md) (propuesto, pendiente de revisión)
+- **Estado:** implementado y validado en local. **No cerrado**: falta la revisión de la responsable del TFG y la ejecución en CI.
+
+## 1. Auditoría previa
+
+| Componente | Estado al inicio | Acción en E5 |
+|---|---|---|
+| `src/errors/infrastructure-error.ts` | `InfrastructureError` con una sola clasificación | Hereda de `SqafError`; acepta `network` y `sut-unavailable`; mismo mensaje |
+| `src/errors/anti-bot-guard.ts` | Guard de navegación | Sin cambios |
+| `src/errors/failure-classification.ts` | 2 valores (`anti-bot`, `unclassified`) | Taxonomía de 8 valores con prioridad; la regla anti-bot se mantiene intacta y es la primera |
+| `src/utils/anti-bot-detector.ts` | Detector, `normalizeText`, `stripAnsi` | `normalizeText` y `stripAnsi` se mueven a `text.ts` y se reexportan (sin duplicar) |
+| `src/reporting/failure-classification-reporter.ts` | 2 contadores, lee el `error-context` completo | 8 contadores (`schemaVersion: 2`), solo lee `# Page snapshot` |
+| `config/environment.ts` (`ConfigurationError`) | Error de configuración de E1 | Sin cambios; se reexporta desde `src/errors` |
+| `src/config/` | No existe (la capa es `config/`) | — |
+
+## 2. Implementación
+
+| Archivo | Contenido |
+|---|---|
+| `src/errors/classifications.ts` | Las 8 clasificaciones, sus tipos, `categoryOf`, `classificationMarker`, `isSqafClassification` |
+| `src/errors/sqaf-error.ts` | `SqafError` abstracta, formato del mensaje, redacción de claves secretas |
+| `src/errors/infrastructure-error.ts` | `InfrastructureError` (compatible con E1) |
+| `src/errors/data-validation-error.ts` | `DataValidationError` (`source`, `issues`) |
+| `src/errors/api-error.ts` | `ApiError` (operación, endpoint, estado HTTP, `responseCode`, mensaje, e-mail de la cuenta) |
+| `src/errors/failure-classification.ts` | `classifyFailure`, `pageSnapshotSection`, `emptyClassificationCounts` |
+| `src/errors/index.ts` | Punto único de importación (incluye `ConfigurationError`) |
+| `src/utils/{text,price,unique,duration,guards,index}.ts` | Utilidades comunes |
+
+## 3. Pruebas
+
+### 3.1 Typecheck
+
+`npm run typecheck` da **exit 0**.
+
+### 3.2 Pruebas unitarias de E5 (66 nuevas)
+
+| Archivo | Pruebas | Qué verifica |
+|---|---|---|
+| `tests/unit/errors/error-hierarchy.spec.ts` | 8 | Herencia, `category`, marcador, inmutabilidad, redacción de secretos, `cause` fuera del mensaje, mensaje **exacto** de E1 de `InfrastructureError`, formato de `DataValidationError` y `ApiError`, `ConfigurationError` reexportado (misma clase) |
+| `tests/unit/errors/taxonomy.spec.ts` | 23 | Cada clasificación con mensajes con el formato de Playwright 1.65; prioridad entre reglas; 5 casos negativos de las reglas nuevas; `ERR_BLOCKED_BY_CLIENT` ignorado; orden de los contadores; extracción de `# Page snapshot` |
+| `tests/unit/utils/common-utilities.spec.ts` | 35 | `parsePrice` (6 válidos, 7 inválidos), `formatPrice`, ids deterministas con un *token* fijo, 10 000 ids únicos, sin colisiones entre fuentes, e-mails sintéticos, secretos aleatorios, `formatDuration` (9 casos y valores inválidos), texto, HTML y *guards* |
+
+### 3.3 Compatibilidad con E1
+
+| Prueba de E1 | Resultado |
+|---|---|
+| `anti-bot-guard.spec.ts` (3) | Sin cambios, pasa |
+| `anti-bot-detector.spec.ts` (17) | Sin cambios, pasa (importa `normalizeText` del módulo de E1, que ahora lo reexporta) |
+| `failure-classification.spec.ts`: 4 casos positivos y 5 negativos anti-bot | Sin cambios, pasan |
+| `failure-classification.spec.ts`: caso TC9 de E0 | **Cambia la expectativa**: de `unclassified` a `assertion/mismatch`, y se añade la comprobación de que **no** es infraestructura (la garantía de E1). Mismo número de pruebas (10) |
+| `failure-classification-reporter.spec.ts` (4) | **Cambian las expectativas**: `schemaVersion` 2, la muestra `expect(2).toBe(3)` es `assertion/mismatch`, y la consola solo muestra contadores mayores que 0. Siguen verificados los estados, el código de salida y la ausencia de retries especiales |
+
+### 3.4 Defectos encontrados durante la validación
+
+| # | Defecto | Detección | Corrección |
+|---|---|---|---|
+| 1 | La regla de *timeout* de localizador no reconocía `Test timeout of 30000ms exceeded` en una acción | Prueba unitaria nueva en rojo | Patrón `(?:Timeout\|Test timeout of) \d+ms exceeded` |
+| 2 | **Falso positivo del reporter (latente desde E1):** el `error-context.md` de Playwright 1.65 incluye el **código fuente del test**. El reporter lo pasaba entero como texto de la página, y el fallo de un test con `"502: Bad gateway"` en su código se clasificó como `sut-unavailable`. La regla anti-bot de E1 tenía el mismo riesgo (por ejemplo, `tests/integration/fixtures/anti-bot.spec.ts` contiene la frase del desafío) | Clasificación observada en la consola durante la ejecución en rojo del defecto 1 | `pageSnapshotSection()`: nunca se usa `# Test source`. **Corregido en la revisión (§3.6):** la primera versión solo leía `# Page snapshot`, pero Playwright 1.65 pone el snapshot de un `expect` fallido dentro de `# Error details`; ahora se leen los bloques `yaml` de ambas secciones |
+| 3 | Un fallo real de DNS en Windows (`getaddrinfo ENOENT`, §E3) no estaba en el patrón heurístico de red. Se clasificó bien por el marcador SQAF, pero un error crudo de Playwright habría quedado `unclassified` | Fallo real durante la primera ejecución de integración de E3 | Patrón `getaddrinfo [A-Z_]+` y prueba con el mensaje real |
+
+### 3.5 Mutaciones controladas
+
+Cada mutación se aplicó con `sed` sobre el código ya confirmado (`3dc07b1`), se ejecutaron las pruebas unitarias indicadas (sin SUT) y se revirtió con `git checkout`. Al terminar, `git status` estaba limpio en `src/`, `tests/` y `config/`.
+
+| # | Mutación | Pruebas ejecutadas | Fallidas |
+|---|---|---|---|
+| M1 | Sin redacción de claves secretas | `tests/unit/errors` | 1 |
+| M2 | Regla anti-bot desactivada | `tests/unit/errors`, `tests/unit/reporting` | 5 |
+| M3 | `ERR_BLOCKED_BY_CLIENT` contado como fallo de red | `tests/unit/errors` | 1 |
+| M4 | `error-context` completo como texto de página (defecto 2) | `tests/unit/errors` | 2 |
+| M8 | La secuencia de ids no avanza | `tests/unit/utils`, `tests/unit/data` | 5 |
+
+Las 5 mutaciones se detectaron. Las de E3 están en [E3 §4.1](E3-test-data-management.md#41-mutaciones-controladas).
+
+### 3.6 Revisión complementaria (2026-11-15)
+
+**Clasificación.** Fallos reales de Playwright 1.65 contra un servidor local (sin SUT), clasificados por el reporter real y comparados con el de `v0.3.0`:
+
+| Caso | Antes de la revisión | Después | `v0.3.0` |
+|---|---|---|---|
+| C1. Aserción en página 502 de Cloudflare | `assertion/mismatch` ❌ | `infrastructure/sut-unavailable` ✅ | `unclassified` |
+| C1b. 502 sin frase estándar | `assertion/mismatch` | `assertion/mismatch` | `unclassified` |
+| C1c. *Timeout* de acción en página 502 | `automation/locator-timeout` | `automation/locator-timeout` (limitación, §6) | `unclassified` |
+| C2. *Timeout* de localizador | `automation/locator-timeout` | `automation/locator-timeout` | `unclassified` |
+| C3a / C3b. DNS en navegador / API | `infrastructure/network` | `infrastructure/network` | `unclassified` |
+| C4. Desafío con `toHaveTitle` | `anti-bot` | `anti-bot` | `anti-bot` |
+| C4b. Desafío con aserción de localizador | `assertion/mismatch` ❌ **(regresión)** | `anti-bot` ✅ | `anti-bot` |
+| C5. "Rs. 502" con HTTP 200 | `assertion/mismatch` | `assertion/mismatch` | `unclassified` |
+| C5b. Expectativa "502 Bad Gateway" con HTTP 200 | `sut-unavailable` ❌ **(falso positivo)** | `assertion/mismatch` ✅ | `unclassified` |
+
+Correcciones: `pageSnapshotSection` lee los bloques `yaml` de `# Error details` y `# Page snapshot` (ADR-0008 D8); la regla 5xx descarta las líneas `Expected…:`, `Locator:` y el *call log* (D12). 6 pruebas nuevas en `taxonomy.spec.ts` reproducen los adjuntos reales (C1, C4b, C5, C5b). En todos los casos el estado sigue siendo `failed` y el código de salida no cambia.
+
+**Redacción de `SqafError`** (ADR-0008 D9): objetos y arrays anidados, texto (`password=…`, JSON, cabeceras, contraseñas generadas) y cadena de `cause` (copias saneadas, corte de ciclos y de profundidad). 11 pruebas nuevas en `tests/unit/errors/secret-redaction.spec.ts`, incluida la simulación de lo que serializa Playwright (mensaje, *stack* y `cause`). La prueba de `error-hierarchy.spec.ts` que exigía conservar la `cause` original (`toBe`) se adaptó: ahora es una copia saneada con el mismo nombre y mensaje.
+
+**Pruebas de E1:** `failure-classification.spec.ts`, `failure-classification-reporter.spec.ts` y `dependency-rule.spec.ts` no cambian respecto del commit `323ee34`.
+
+### 3.7 Redacción del extracto del reporter (INC-2026-11-16)
+
+El JSON de clasificación se publica en CI, y un `fill` que falla con el campo ya localizado imprime el valor en el *call log* (comprobado en local con un servidor falso). `redactExcerpt` (ADR-0008 D13) redacta los valores tecleados, las contraseñas `Sqaf#…` de cualquier longitud y los pares secretos **antes** de recortar el extracto. La clasificación no cambia, porque usa el texto original.
+
+5 pruebas nuevas en `failure-classification-reporter.spec.ts` cubren `fill`/`type`/`pressSequentially`, las contraseñas generadas, la redacción antes del recorte, el diagnóstico ordinario intacto y el JSON final sin valores sensibles. Las expectativas existentes no cambian. La mutación que elimina la redacción se detecta. Ver [INC-2026-11-16](../security/INC-2026-11-16-baseline-report-credentials.md).
+
+### 3.8 Evidencia HTTP estructurada: caso "queue full" (ADR-0008 D14)
+
+**Observación en CI.** Run `43799046248` (PR #6): el test de E2 `auth.spec.ts` › "login with invalid credentials shows the error message" falló en el primer intento y pasó en el reintento (**flaky**). La captura y la traza muestran que el SUT respondió al `POST /login` con **HTTP 503** y la página "This website is under heavy load (queue full)". El formulario sí llegó al servidor, así que `fillSecret` no es la causa. El intento se clasificó `assertion/mismatch` porque la página no tiene la frase estándar del 503.
+
+**Corrección.** La fixture automática `httpEvidence` (`src/fixtures/http-evidence.fixture.ts`) registra el código de la última respuesta de documento del frame principal y lo adjunta solo a los intentos fallidos (`sqaf-http-evidence`). El reporter lo lee (`parseHttpEvidence`) y el clasificador aplica la regla 4a: documento 5xx → `infrastructure/sut-unavailable`. No depende del texto de la página. El reporter sigue siendo solo observador y la redacción del extracto no cambia.
+
+**Reproducción controlada** (servidor local, sin SUT): `tests/integration/reporting/http-evidence.spec.ts` con las muestras `tests/unit/support/http-samples/` y el reporter real.
+
+| Muestra | Estado | Clasificación |
+|---|---|---|
+| POST de login → 503 "queue full" | failed | `infrastructure/sut-unavailable`, evidencia `main document (POST) answered HTTP 503 Service Unavailable` |
+| POST de login → 200 sin mensaje de error | failed | `assertion/mismatch` |
+| *Timeout* de localizador en página sana | failed | `automation/locator-timeout` |
+| Página sana con imagen e iframe que responden 503 | failed | `assertion/mismatch` (no hay falso positivo) |
+| Test que pasa | passed | Sin adjunto de evidencia HTTP |
+
+**Pruebas unitarias** (19 nuevas): en `taxonomy.spec.ts`, el caso "queue full" con y sin estado, los códigos 500/502/504/520/599 → `sut-unavailable`, los códigos 200/204/301/403/404/499 sin cambios, la prioridad de anti-bot, marcador SQAF y red sobre el 5xx, los *timeouts* y aserciones en página sana o 5xx, el *parser* del adjunto y la URL sin *query*. En `failure-classification-reporter.spec.ts`, el adjunto 503 y el adjunto ausente o malformado.
+
+**Mutaciones** (detectadas): regla 4a desactivada (8 unitarias y el contrato fallan); la fixture no adjunta (falla el contrato); la fixture registra cualquier respuesta o también los iframes (falla el contrato); el reporter ignora el adjunto (falla 1 unitaria).
+
+**Resultados locales:** typecheck correcto; 257/257 unitarias; contratos de CI 15/15; clasificación 67/67 (E1 + taxonomía + reporter); redacción 24/24; contratos de integración sin SUT 4/4. Las pruebas de E1 y E2 no cambian.
+
+**Limitaciones:** la línea base no usa las fixtures de SQAF, así que un 503 sin frase estándar en E0 sigue dependiendo de las reglas de texto (E0 congelada). Un fallo de una llamada de API (`request`) no pasa por esta regla: lo cubre `AccountApiClient` (`InfrastructureError`).
+
+## 4. Integraciones reales
+
+E5 no contacta el SUT. La taxonomía se ejercitó con fallos reales en dos ocasiones:
+
+- Un fallo real de infraestructura: la caída de DNS local en la primera ejecución de integración de E3, clasificada `infrastructure/network` con el e-mail de la cuenta y sin la contraseña.
+- Un fallo de automatización: el defecto 1, clasificado como se describe en §3.4.
+
+Las reglas `sut-unavailable` y `anti-bot` contra el SUT real no se han observado en el ciclo 1.
+
+## 5. Regresión
+
+Ver [E3-test-data-management.md §7](E3-test-data-management.md#7-regresión-e0e1e2): ambas etapas comparten la misma regresión (203 pruebas unitarias, 20 de integración de E2, 3 corridas de la línea base y SHA-256 sin cambios).
+
+## 6. Limitaciones
+
+- `assertion/mismatch` indica que una expectativa no se cumplió. No distingue un defecto del producto de uno de la automatización (ADR-0008).
+- Si Playwright no incluye ningún snapshot en el adjunto (por ejemplo, un *timeout* de acción, caso C1c), una página 5xx no se puede reconocer y el fallo queda `automation/locator-timeout`.
+- La clasificación se basa en texto. Un mensaje con un formato nuevo de Playwright puede quedar `unclassified` hasta que se observe y se añada su patrón con evidencia.
+- La cabecera del resumen del job sigue listando todos los proyectos configurados (pendiente de E2, previsto para E6).

@@ -59,7 +59,6 @@ test.describe('classified as infrastructure/anti-bot-challenge', () => {
 test.describe('left unclassified (no false positives)', () => {
   const cases: ReadonlyArray<readonly [string, string]> = [
     ['an ordinary assertion failure', 'Expected: 3\nReceived: 2'],
-    ['the Stage 0 automation failure (TC9)', STAGE0_AUTOMATION_FAILURE],
     ['a received title that only contains the challenge title', 'Received: "One moment, please... | Shop"'],
     ['the challenge title without quotes', 'Product "One moment" not found. One moment, please... retrying'],
     ['a fragment of the challenge sentence', 'Please wait while the cart is updated'],
@@ -72,5 +71,20 @@ test.describe('left unclassified (no false positives)', () => {
 
   test('a failure without any message', () => {
     expect(classifyFailure({ errorMessages: [] }).classification).toBe('unclassified');
+  });
+});
+
+/*
+ * Stage 5 (ADR-0008): until Stage 4 this case was `unclassified` because the
+ * taxonomy only knew the anti-bot challenge. It is still NOT an
+ * infrastructure failure (the Stage 1 guarantee); with the full taxonomy it
+ * is a failed assertion.
+ */
+test('the Stage 0 automation failure (TC9) is not infrastructure: it is assertion/mismatch', () => {
+  const result = classifyFailure({ errorMessages: [STAGE0_AUTOMATION_FAILURE] });
+  expect(result.classification).not.toMatch(/^infrastructure\//);
+  expect(result).toEqual({
+    classification: 'assertion/mismatch',
+    evidence: ['failed assertion expect(locator).toBeVisible(…)'],
   });
 });

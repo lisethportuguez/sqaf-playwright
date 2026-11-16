@@ -2,10 +2,13 @@ import { existsSync, readFileSync } from 'node:fs';
 import { expect, test, type TestInfo } from '@playwright/test';
 import type { FullConfig, FullResult } from '@playwright/test/reporter';
 import FailureClassificationReporter, {
+  redactExcerpt,
   renderStepSummary,
   type FailureClassificationReport,
 } from '../../../src/reporting/failure-classification-reporter';
+import { emptyClassificationCounts } from '../../../src/errors/failure-classification';
 import { readJson, runPlaywright } from '../support/run-playwright';
+import type { TestCase, TestResult } from '@playwright/test/reporter';
 
 /**
  * The reporter is exercised end to end: a child Playwright run executes four
@@ -65,7 +68,8 @@ test('classifies failures without changing statuses or the exit code', async ({}
   expect(report.runStatus).toBe('failed');
   expect(report.totals).toEqual({
     failedAttempts: 3,
-    byClassification: { 'infrastructure/anti-bot-challenge': 2, unclassified: 1 },
+    // Stage 5 taxonomy: the ordinary `expect(2).toBe(3)` sample is now assertion/mismatch.
+    byClassification: { ...emptyClassificationCounts(), 'infrastructure/anti-bot-challenge': 2, 'assertion/mismatch': 1 },
   });
   const byTest = Object.fromEntries(report.failures.map((f) => [f.test.split(' › ').at(-1), f]));
   expect(byTest['simulated baseline assertion on the challenge page']?.classification).toBe(
@@ -74,7 +78,7 @@ test('classifies failures without changing statuses or the exit code', async ({}
   expect(byTest['SQAF guard raises InfrastructureError on the challenge page']?.classification).toBe(
     'infrastructure/anti-bot-challenge',
   );
-  expect(byTest['ordinary assertion failure']?.classification).toBe('unclassified');
+  expect(byTest['ordinary assertion failure']?.classification).toBe('assertion/mismatch');
   for (const failure of report.failures) {
     expect(failure.status).toBe('failed');
     expect(failure.file).not.toMatch(/^[A-Za-z]:|^\//); // relative paths only
@@ -82,7 +86,8 @@ test('classifies failures without changing statuses or the exit code', async ({}
 
   // Console and GitHub job summary.
   expect(run.stdout).toContain('[SQAF] Failure classification: 3 failed attempt(s)');
-  expect(run.stdout).toContain('2 infrastructure/anti-bot-challenge, 1 unclassified');
+  expect(run.stdout).toContain('2 infrastructure/anti-bot-challenge, 1 assertion/mismatch');
+  expect(run.stdout).not.toContain('0 infrastructure/network'); // only non-zero counts are printed
   const summary = readFileSync(paths.summary, 'utf8');
   expect(summary).toContain('### SQAF failure classification');
   expect(summary).toContain('| `infrastructure/anti-bot-challenge` | 2 |');
@@ -124,14 +129,129 @@ test('onEnd returns nothing, so it can never override the run status', async ({}
 
 test('renders a job summary for a run without failures', () => {
   const markdown = renderStepSummary({
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: '2026-11-15T00:00:00.000Z',
     runStatus: 'passed',
     projects: ['baseline'],
     note: 'n',
-    totals: { failedAttempts: 0, byClassification: { 'infrastructure/anti-bot-challenge': 0, unclassified: 0 } },
+    totals: { failedAttempts: 0, byClassification: emptyClassificationCounts() },
     failures: [],
   });
   expect(markdown).toContain('### SQAF failure classification (baseline)');
   expect(markdown).toContain('No failed attempts.');
+});
+
+/*
+ * INC-2026-11-16: the classification JSON is published by CI, and a failed
+ * `fill(password)` prints the typed value in Playwright's call log. The
+ * excerpt is redacted; the values below are fake and built at runtime.
+ */
+test.describe('errorExcerpt never contains typed values or generated passwords', () => {
+  const secret = ['Sqaf', '#', 'b2c4e6f8-0a1b-4c3d-9e8f-7a6b5c4d3e2f'].join('');
+  const generated = ['Sqaf', '#', 'Ab3_dE5-gH7iJ9kL'].join('');
+  const typed = `typed-${Date.now().toString(36)}`;
+
+  // Call log printed by Playwright 1.65 when fill fails after resolving the element (observed locally).
+  const FILL_FAILURE = [
+    'Error: locator.fill: Error: Element is not an <input>, <textarea> or [contenteditable] element',
+    'Call log:',
+    "  - waiting for locator('[data-qa=\"password\"]')",
+    "    - locator resolved to <h2>Enter Account Information</h2>",
+    `    - fill("${secret}")`,
+    '  - attempting fill action',
+  ].join('\n');
+
+  test('fill, type and pressSequentially values are redacted', () => {
+    const excerpt = redactExcerpt(
+      [FILL_FAILURE, `  - type("${typed}")`, `  - pressSequentially('${typed}')`, `Fill "${typed}" locator('#x')`].join('\n'),
+    );
+    expect(excerpt).toContain('fill("[REDACTED]")');
+    expect(excerpt).toContain('type("[REDACTED]")');
+    expect(excerpt).toContain("pressSequentially('[REDACTED]')");
+    expect(excerpt).toContain('Fill "[REDACTED]"');
+    expect(excerpt).not.toContain(secret);
+    expect(excerpt).not.toContain(typed);
+  });
+
+  test('generated passwords are redacted in full, also when longer than 16 characters', () => {
+    const excerpt = redactExcerpt(`Expected: "${generated}"\nReceived: "${secret}"`);
+    expect(excerpt).toBe('Expected: "[REDACTED]"\nReceived: "[REDACTED]"');
+  });
+
+  test('redaction happens before truncation: no partial value at the end of the excerpt', () => {
+    const excerpt = redactExcerpt(`${'x'.repeat(380)} - fill("${secret}")`);
+    expect(excerpt.length).toBeLessThanOrEqual(400);
+    expect(excerpt).not.toContain(secret.slice(0, 12));
+  });
+
+  test('ordinary diagnostics are kept', () => {
+    const message = "Error: expect(locator).toBeVisible() failed\n\nLocator: getByText('Account Created!')\nExpected: visible";
+    expect(redactExcerpt(message)).toBe(message);
+  });
+
+  test('the final JSON contains no sensitive input value', async ({}, testInfo) => {
+    const outputFile = testInfo.outputPath('redacted.json');
+    const reporter = new FailureClassificationReporter({ outputFile });
+    reporter.onBegin({ rootDir: process.cwd(), projects: [{ name: 'baseline' }] } as unknown as FullConfig);
+    const fakeTest = {
+      titlePath: () => ['', 'baseline', 'baseline.spec.ts', 'TC1 - Register User', 'registers a new user through the UI'],
+      parent: { project: () => ({ name: 'baseline' }) },
+      location: { file: `${process.cwd()}/baseline/baseline.spec.ts`, line: 1, column: 1 },
+    } as unknown as TestCase;
+    const fakeResult = {
+      status: 'failed',
+      retry: 0,
+      errors: [{ message: FILL_FAILURE }, { message: `Expected: "${generated}"` }],
+      attachments: [],
+    } as unknown as TestResult;
+    reporter.onTestEnd(fakeTest, fakeResult);
+    reporter.onEnd({ status: 'failed' } as FullResult);
+
+    const text = readFileSync(outputFile, 'utf8');
+    expect(text).not.toContain(secret);
+    expect(text).not.toContain(generated);
+    const report = JSON.parse(text) as FailureClassificationReport;
+    expect(report.failures).toHaveLength(1);
+    expect(report.failures[0]!.errorExcerpt).toContain('fill("[REDACTED]")');
+    // The classification itself is unchanged by the redaction.
+    expect(report.failures[0]!.status).toBe('failed');
+  });
+});
+
+/* ADR-0008 D14: the reporter reads the structured HTTP evidence attached by the fixtures. */
+test.describe('structured HTTP evidence attachment', () => {
+  const fakeTest = {
+    titlePath: () => ['', 'integration', 'auth.spec.ts', 'login with invalid credentials shows the error message'],
+    parent: { project: () => ({ name: 'integration' }) },
+    location: { file: `${process.cwd()}/tests/integration/pages/auth.spec.ts`, line: 20, column: 1 },
+  } as unknown as TestCase;
+  const message = "Error: expect(locator).toBeVisible() failed\n\nLocator: getByText('Your email or password is incorrect!', { exact: true })";
+
+  function classify(testInfo: TestInfo, attachments: TestResult['attachments']): FailureClassificationReport {
+    const outputFile = testInfo.outputPath(`http-${attachments.length}-${Date.now()}.json`);
+    const reporter = new FailureClassificationReporter({ outputFile });
+    reporter.onBegin({ rootDir: process.cwd(), projects: [{ name: 'integration' }] } as unknown as FullConfig);
+    reporter.onTestEnd(fakeTest, { status: 'failed', retry: 0, errors: [{ message }], attachments } as unknown as TestResult);
+    const returned = reporter.onEnd({ status: 'failed' } as FullResult);
+    expect(returned).toBeUndefined(); // still an observer
+    return readJson<FailureClassificationReport>(outputFile);
+  }
+
+  test('an HTTP 503 main document makes the failure infrastructure/sut-unavailable', async ({}, testInfo) => {
+    const body = Buffer.from(
+      JSON.stringify({ schemaVersion: 1, lastDocument: { method: 'POST', url: 'https://automationexercise.com/login', status: 503, statusText: 'Service Unavailable' } }),
+    );
+    const report = classify(testInfo, [{ name: 'sqaf-http-evidence', contentType: 'application/json', body }]);
+    expect(report.failures[0]).toMatchObject({
+      status: 'failed',
+      classification: 'infrastructure/sut-unavailable',
+      evidence: ['main document (POST) answered HTTP 503 Service Unavailable'],
+    });
+  });
+
+  test('without the attachment, or with a malformed one, nothing changes', async ({}, testInfo) => {
+    expect(classify(testInfo, []).failures[0]!.classification).toBe('assertion/mismatch');
+    const broken = [{ name: 'sqaf-http-evidence', contentType: 'application/json', body: Buffer.from('{not json') }];
+    expect(classify(testInfo, broken).failures[0]!.classification).toBe('assertion/mismatch');
+  });
 });

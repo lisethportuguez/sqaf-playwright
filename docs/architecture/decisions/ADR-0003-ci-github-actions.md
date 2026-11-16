@@ -82,7 +82,7 @@ paths:
 | Navegadores | Sigue siendo solo Chromium | Firefox y WebKit no se ejecutan hasta E4 |
 | Workers y retries | Sin cambios: 1 worker en CI; retries globales de E1 (2 en CI para los proyectos SQAF, 0 en `baseline` y `unit`) | Las decisiones de E1 no se modifican |
 
-`tests/unit/ci/workflow-steps.spec.ts` fija el orden (typecheck → unitarias → línea base → integración), que las evidencias de la línea base se suban antes de la integración, las salidas separadas y que solo se instale Chromium.
+`tests/unit/ci/workflow-steps.spec.ts` fija el orden (typecheck → unitarias → línea base → integración), que las evidencias de la línea base se suban antes de la integración, las salidas separadas y que solo se instale Chromium. Desde el incidente INC-2026-11-16 también fija que ningún paso publique `playwright-report/`, que la línea base solo publique su JSON de clasificación, que la evidencia de fallo excluya la línea base y que el paso "Run baseline" sea exactamente el de la Etapa 1.
 
 ### Configuración necesaria en GitHub
 
@@ -92,6 +92,7 @@ No se necesitan *secrets* ni *variables*. Solo hay que crear el repositorio púb
 
 - E1 (hecho): artifacts de evidencias cuando hay fallos, pruebas unitarias, clasificación de fallos en `$GITHUB_STEP_SUMMARY` y filtros de rutas.
 - E2 (hecho): paso de integración de Page Objects y fixtures con artifacts propios.
+- E3/E5 (PR #6, incidente [INC-2026-11-16](../../security/INC-2026-11-16-baseline-report-credentials.md)): **el informe HTML de la línea base deja de publicarse**, porque registraba el valor tecleado por `fill(password)` en TC1. La línea base publica solo `reports/failure-classification.json` (paso "Upload baseline classification", con extractos redactados), y "Upload failure evidence" excluye sus salidas (`!test-results/*-baseline/**`). El paso "Run baseline" y los escenarios no cambian. El informe HTML de integración se sigue publicando. Lo fijan los contratos de `tests/unit/ci/workflow-steps.spec.ts`.
 - E4: jobs filtrados por tags (smoke en PR, regression en `main`).
 - E6: reportes JSON y JUnit, historial de métricas y resumen completo en `$GITHUB_STEP_SUMMARY`.
 - E7 (opcional): ejecución programada y matriz multi-navegador.

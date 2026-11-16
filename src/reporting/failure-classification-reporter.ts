@@ -7,14 +7,21 @@ import type {
   TestCase,
   TestResult,
 } from '@playwright/test/reporter';
-import { classifyFailure, type FailureClassification } from '../errors/failure-classification';
-import { stripAnsi } from '../utils/anti-bot-detector';
+import {
+  classifyFailure,
+  emptyClassificationCounts,
+  pageSnapshotSection,
+  type FailureClassification,
+} from '../errors/failure-classification';
+import { HTTP_EVIDENCE_ATTACHMENT, parseHttpEvidence } from '../errors/http-evidence';
+import { redactSecrets, redactTypedValues } from '../utils/redaction';
+import { stripAnsi } from '../utils/text';
 
 /**
  * SQAF — Failure classification reporter (Stage 1). See ADR-0006.
  *
- * Observes every failed attempt and classifies it (Stage 1: anti-bot challenge
- * or unclassified). The classification is written to the console, to a JSON
+ * Observes every failed attempt and classifies it with the SQAF taxonomy
+ * (Stage 5, ADR-0008). The classification is written to the console, to a JSON
  * file and, in GitHub Actions, to the job summary.
  *
  * It is strictly an OBSERVER: it never changes a test status, the number of
@@ -40,7 +47,8 @@ export interface ClassifiedAttempt {
 }
 
 export interface FailureClassificationReport {
-  readonly schemaVersion: 1;
+  /** 2 since Stage 5: `byClassification` lists every classification of the taxonomy. */
+  readonly schemaVersion: 2;
   readonly generatedAt: string;
   readonly runStatus: FullResult['status'];
   readonly projects: readonly string[];
@@ -54,10 +62,26 @@ export interface FailureClassificationReport {
 
 const DEFAULT_OUTPUT = 'reports/failure-classification.json';
 const EXCERPT_LENGTH = 400;
+
+/**
+ * Excerpt of the first error, WITHOUT secrets (INC-2026-11-16). A failed
+ * `fill(password)` prints the typed value in Playwright's call log, and this
+ * JSON is published by CI: typed values, SQAF-generated passwords and
+ * form/JSON/header secret pairs are redacted BEFORE truncation, so a value is
+ * never kept in part. Classification uses the original text.
+ */
+export function redactExcerpt(message: string): string {
+  return redactSecrets(redactTypedValues(message)).slice(0, EXCERPT_LENGTH);
+}
 const NOTE = 'Informational classification. Test statuses, retries and the exit code are not modified.';
 
 function readErrorContext(result: TestResult): string | undefined {
-  const attachment = result.attachments.find((item) => item.name === 'error-context');
+  return readAttachmentText(result, 'error-context');
+}
+
+/** Text of a named attachment (inline body or file), `undefined` if absent or unreadable. */
+function readAttachmentText(result: TestResult, name: string): string | undefined {
+  const attachment = result.attachments.find((item) => item.name === name);
   if (!attachment) return undefined;
   if (attachment.body) return attachment.body.toString('utf8');
   if (attachment.path && existsSync(attachment.path)) {
@@ -86,7 +110,9 @@ export function renderStepSummary(report: FailureClassificationReport): string {
   lines.push(
     '| Classification | Failed attempts |',
     '|---|---|',
-    ...Object.entries(report.totals.byClassification).map(([name, count]) => `| \`${name}\` | ${count} |`),
+    ...Object.entries(report.totals.byClassification)
+      .filter(([, count]) => count > 0)
+      .map(([name, count]) => `| \`${name}\` | ${count} |`),
     '',
     '| Test | Project | Retry | Status | Classification | Evidence |',
     '|---|---|---|---|---|---|',
@@ -124,9 +150,13 @@ export default class FailureClassificationReporter implements Reporter {
     if (result.status === 'passed' || result.status === 'skipped') return;
 
     const messages = result.errors.map((error) => stripAnsi(error.message ?? error.value ?? ''));
-    const context = readErrorContext(result);
+    const errorContext = readErrorContext(result);
+    const context = errorContext === undefined ? undefined : pageSnapshotSection(errorContext);
+    // Structured HTTP status of the last main-frame document (ADR-0008 D14), when the fixtures recorded it.
+    const http = parseHttpEvidence(readAttachmentText(result, HTTP_EVIDENCE_ATTACHMENT));
     const { classification, evidence } = classifyFailure({
       errorMessages: messages,
+      ...(http !== undefined ? { documentResponse: http.lastDocument } : {}),
       ...(context !== undefined ? { pageSnapshot: context } : {}),
     });
 
@@ -139,19 +169,16 @@ export default class FailureClassificationReporter implements Reporter {
       status: result.status,
       classification,
       evidence,
-      errorExcerpt: (messages[0] ?? '').slice(0, EXCERPT_LENGTH),
+      errorExcerpt: redactExcerpt(messages[0] ?? ''),
     });
   }
 
   onEnd(result: FullResult): void {
-    const byClassification: Record<FailureClassification, number> = {
-      'infrastructure/anti-bot-challenge': 0,
-      unclassified: 0,
-    };
+    const byClassification = emptyClassificationCounts();
     for (const failure of this.failures) byClassification[failure.classification] += 1;
 
     const report: FailureClassificationReport = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       generatedAt: new Date().toISOString(),
       runStatus: result.status,
       projects: this.projects,
@@ -167,7 +194,9 @@ export default class FailureClassificationReporter implements Reporter {
     if (this.failures.length === 0) {
       console.log(`[SQAF] Failure classification: no failed attempts. Report: ${where}`);
     } else {
-      const parts = Object.entries(byClassification).map(([name, count]) => `${count} ${name}`);
+      const parts = Object.entries(byClassification)
+        .filter(([, count]) => count > 0)
+        .map(([name, count]) => `${count} ${name}`);
       console.log(
         `[SQAF] Failure classification: ${this.failures.length} failed attempt(s) — ${parts.join(', ')}. Report: ${where}`,
       );

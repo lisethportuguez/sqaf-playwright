@@ -1,5 +1,6 @@
 import { expect, type Locator } from '@playwright/test';
 import { BasePage } from './base.page';
+import { fillSecret } from './components/secret-field';
 
 /** Data the login form needs (D9: structural; E3 data will match it). */
 export interface LoginCredentials {
@@ -52,7 +53,8 @@ export class SignupLoginPage extends BasePage {
 
   async login(credentials: LoginCredentials): Promise<void> {
     await this.loginEmailInput.fill(credentials.email);
-    await this.loginPasswordInput.fill(credentials.password);
+    // fillSecret: the password never appears in a step title (ADR-0009 D16).
+    await fillSecret(this.loginPasswordInput, credentials.password);
     await this.loginButton.click();
   }
 

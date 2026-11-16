@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { CLOUDFLARE_CHALLENGE_SIGNATURES, type AntiBotSignatures } from '../../config/anti-bot';
+import { normalizeText } from './text';
 
 /**
  * SQAF — Anti-bot challenge detection (Stage 1). See ADR-0006.
@@ -24,15 +25,8 @@ export interface AntiBotDetection {
   readonly matched: readonly string[];
 }
 
-/** Removes ANSI colour codes, as printed by Playwright in error messages. */
-export function stripAnsi(value: string): string {
-  return value.replace(/\u001b\[[0-9;]*m/g, '');
-}
-
-/** Strips ANSI codes, collapses whitespace and unifies the Unicode ellipsis with "...". */
-export function normalizeText(value: string): string {
-  return stripAnsi(value).replace(/…/g, '...').replace(/\s+/g, ' ').trim();
-}
+/** Stage 1 exports, kept for compatibility; implemented in ./text since Stage 5. */
+export { normalizeText, stripAnsi } from './text';
 
 /**
  * A page is a challenge when its title is EXACTLY a challenge title, or its

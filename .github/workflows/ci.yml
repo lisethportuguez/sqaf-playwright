@@ -85,16 +85,22 @@ jobs:
           echo '## Baseline (Stage 0 conditions)' >> "$GITHUB_STEP_SUMMARY"
           npm run test:baseline
 
-      - name: Upload HTML report
+      # Baseline evidence (INC-2026-11-16): ONLY the failure classification
+      # JSON is published (its excerpts are redacted). The baseline HTML report
+      # is still generated but never uploaded: it records typed values, such
+      # as the TC1 password, and it stays on the ephemeral runner.
+      - name: Upload baseline classification
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-${{ github.run_id }}-${{ github.run_attempt }}
-          path: playwright-report/
+          name: baseline-classification-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/failure-classification.json
           retention-days: 14
           if-no-files-found: error
 
       # Failure evidence (Stage 1): test outputs and the failure classification.
+      # Baseline outputs are excluded (INC-2026-11-16): their error-context
+      # files and call logs may contain the TC1 password.
       - name: Upload failure evidence
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
@@ -102,6 +108,7 @@ jobs:
           name: failure-evidence-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             test-results/
+            !test-results/*-baseline/**
             reports/
           retention-days: 14
           if-no-files-found: ignore
