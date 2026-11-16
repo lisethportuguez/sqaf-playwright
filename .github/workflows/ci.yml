@@ -46,10 +46,14 @@ on:
 permissions:
   contents: read
 
-# Cancel superseded runs of the same branch / pull request.
+# One run at a time per branch or pull request, and a running one is NEVER
+# cancelled (Stage 4, E4.5): the authentication and checkout scenarios create
+# test accounts, and a run cancelled half way could stop before their fixtures
+# delete them. A newer push waits until the running run ends; if several
+# pushes arrive meanwhile, GitHub keeps only the newest pending run.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   baseline:
@@ -98,18 +102,19 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-      # Failure evidence (Stage 1): test outputs and the failure classification.
-      # Baseline outputs are excluded (INC-2026-11-16): their error-context
-      # files and call logs may contain the TC1 password.
+      # Failure evidence (Stage 1) of the unit tests and the baseline: ONLY the
+      # failure classification (redacted excerpts, classification, file and
+      # line of each failed attempt). Raw test outputs (test-results/) are no
+      # longer published (Stage 4, E4.5 final closure): their error contexts
+      # and call logs show source code frames with fictitious e-mails and URL
+      # credentials, and the baseline ones may contain the TC1 password
+      # (INC-2026-11-16). The source is public, so file and line are enough.
       - name: Upload failure evidence
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: failure-evidence-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            test-results/
-            !test-results/*-baseline/**
-            reports/
+          path: reports/failure-classification.json
           retention-days: 14
           if-no-files-found: ignore
 
@@ -117,30 +122,87 @@ jobs:
       # baseline so it can never influence the baseline run or its evidence.
       # Runs only if everything before it passed (fewer requests to the SUT).
       # Separate output folders and artifacts keep its results identifiable.
+      # Stage 4 (E4.5, security closure): the CLI reporters replace the
+      # configured ones, so NO HTML or raw JSON report is generated. The HTML
+      # report showed the synthetic test-account e-mails in the `Fill "…"` step
+      # titles (Playwright writes the typed value) and in the attachments; it
+      # is no longer published. The run publishes only the safe summary.
       - name: Integration tests (Page Objects and fixtures)
         id: integration
-        env:
-          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-integration
         run: |
           echo '## Integration (Page Objects and fixtures)' >> "$GITHUB_STEP_SUMMARY"
-          npm run test:integration -- --output=test-results-integration
+          npm run test:integration -- --output=test-results-integration --reporter=list,./src/reporting/failure-classification-reporter.ts,./src/reporting/run-summary-reporter.ts
 
-      - name: Upload integration HTML report
+      # Safe summary only (same reporter as the e2e step, uploaded BEFORE the
+      # e2e step writes its own): outcome, attempts, durations and
+      # classification per test; no error messages, step titles, attachments,
+      # e-mails, account ids, passwords or card data.
+      - name: Upload integration summary
         if: ${{ !cancelled() && steps.integration.outcome != 'skipped' }}
         uses: actions/upload-artifact@v4
         with:
-          name: integration-report-${{ github.run_id }}-${{ github.run_attempt }}
-          path: playwright-report-integration/
+          name: integration-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/run-summary.json
           retention-days: 14
           if-no-files-found: error
 
+      # Failure evidence ONLY of the integration suites that never use test
+      # accounts, e-mails, passwords or card data. Excluded: data/ (account API
+      # and invalid logins), pages/auth, pages/checkout-components (card form),
+      # reporting/ and security/ (fake-SUT runs with synthetic credentials),
+      # and reports/ (its error excerpts may name a test account).
       - name: Upload integration failure evidence
         if: ${{ failure() && steps.integration.outcome == 'failure' }}
         uses: actions/upload-artifact@v4
         with:
           name: integration-failure-evidence-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            test-results-integration/
-            reports/
+            test-results-integration/pages-base-page-*/
+            test-results-integration/pages-cart-*/
+            test-results-integration/pages-products-*/
+            test-results-integration/pages-product-components-*/
+            test-results-integration/fixtures-anti-bot-*/
+            test-results-integration/fixtures-fixtures-*/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      # Stage 4 (ADR-0010 D9, E4.5): the SQAF functional scenarios, AFTER the
+      # integration tests and only if everything before passed.
+      #  - pull_request: only @smoke (6 scenarios, 9 tests, 2 test accounts).
+      #  - push to main and manual runs: the full suite (15 scenarios, 18 tests,
+      #    8 test accounts).
+      # Chromium (npm run test:e2e), 1 worker and the CI retries of
+      # playwright.config.ts; flaky tests are reported as flaky, never hidden.
+      # The CLI reporters replace the configured ones, so NO HTML or raw JSON
+      # report is generated: they would hold the synthetic test-account
+      # e-mails. The run publishes only the safe summary (and the job summary).
+      - name: Functional scenarios (SQAF e2e)
+        id: e2e
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then SELECTION='--grep=@smoke'; else SELECTION=''; fi
+          echo "## Functional scenarios (SQAF e2e, ${SELECTION:-full suite})" >> "$GITHUB_STEP_SUMMARY"
+          npm run test:e2e -- $SELECTION --output=test-results-e2e --reporter=list,./src/reporting/failure-classification-reporter.ts,./src/reporting/run-summary-reporter.ts
+
+      # Safe summary only: outcome, attempts, durations and classification per
+      # test; no error messages, step titles, e-mails, passwords or card data.
+      - name: Upload e2e summary
+        if: ${{ !cancelled() && steps.e2e.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/run-summary.json
+          retention-days: 14
+          if-no-files-found: error
+
+      # Failure evidence ONLY of the product suites (tests/e2e/products), which
+      # never use accounts or forms. Authentication and checkout outputs are
+      # never published: their screenshots and error contexts show the
+      # registration, login and payment forms (ADR-0009 D16).
+      - name: Upload e2e failure evidence (product suites)
+        if: ${{ failure() && steps.e2e.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-failure-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results-e2e/products-*/
           retention-days: 14
           if-no-files-found: ignore
