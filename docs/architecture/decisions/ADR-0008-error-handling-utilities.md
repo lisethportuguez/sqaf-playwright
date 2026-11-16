@@ -1,6 +1,6 @@
 # ADR-0008: Jerarquía de errores, taxonomía de fallos y utilidades comunes
 
-- **Estado:** Propuesto (implementado en la rama `stage/3-5-data-utils-errors`; pendiente de revisión por la responsable del TFG)
+- **Estado:** Aceptado e implementado (aprobado por la responsable del TFG; PR [#6](https://github.com/lisethportuguez/sqaf-playwright/pull/6) fusionado en `main`, commit de merge `f4f79e7`, tag `v0.4.0`)
 - **Fecha:** 2026-11-15
 - **Etapa:** E5 (ciclo 1, ejecutada antes que E3 porque E3 usa sus errores)
 - **Amplía:** [ADR-0006](ADR-0006-infrastructure-failure-classification.md) (E1 adelantó el subconjunto anti-bot)

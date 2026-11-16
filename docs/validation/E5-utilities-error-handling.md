@@ -3,8 +3,8 @@
 - **Etapa:** E5 (ciclo 1, junto con E3). Se ejecutó **antes** que E3 porque E3 usa sus errores.
 - **Rama:** `stage/3-5-data-utils-errors` (creada desde `main` en `403115f`, merge de E2, tag `v0.3.0`)
 - **Fecha:** 2026-11-15
-- **Decisiones:** [ADR-0008](../architecture/decisions/ADR-0008-error-handling-utilities.md) (propuesto, pendiente de revisión)
-- **Estado:** implementado y validado en local. **No cerrado**: falta la revisión de la responsable del TFG y la ejecución en CI.
+- **Decisiones:** [ADR-0008](../architecture/decisions/ADR-0008-error-handling-utilities.md) (aceptado e implementado)
+- **Estado:** **Completada y cerrada.** PR [#6](https://github.com/lisethportuguez/sqaf-playwright/pull/6) fusionado en `main` (commit de merge `f4f79e7666d9111be641760bd7e8c49c2b80d189`), tag `v0.4.0`. CI del PR [`43800662549`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43800662549) y CI posterior al merge [`43802704575`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43802704575) en verde.
 
 ## 1. Auditoría previa
 
@@ -148,3 +148,14 @@ Ver [E3-test-data-management.md §7](E3-test-data-management.md#7-regresión-e0e
 - Si Playwright no incluye ningún snapshot en el adjunto (por ejemplo, un *timeout* de acción, caso C1c), una página 5xx no se puede reconocer y el fallo queda `automation/locator-timeout`.
 - La clasificación se basa en texto. Un mensaje con un formato nuevo de Playwright puede quedar `unclassified` hasta que se observe y se añada su patrón con evidencia.
 - La cabecera del resumen del job sigue listando todos los proyectos configurados (pendiente de E2, previsto para E6).
+
+## Cierre de E5
+
+| Elemento | Valor |
+|---|---|
+| PR | [#6](https://github.com/lisethportuguez/sqaf-playwright/pull/6) "E3/E5: Test Data Management, Utilities and Error Handling", **MERGED** (2026-11-16) |
+| Commit de merge | `f4f79e7666d9111be641760bd7e8c49c2b80d189` (padres `403115f` y `c518c80`) |
+| Tag | `v0.4.0` (anotado), apunta a `f4f79e7`. Sin GitHub Release |
+| CI del PR | [`43800662549`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43800662549): success. 257 unitarias, línea base 5/5, integración 31/31, sin reintentos |
+| CI posterior al merge | [`43802704575`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43802704575) (push a `main`): success. 257 unitarias, línea base 5/5, integración 31/31, sin reintentos. Artefactos sin contraseñas y sin informe HTML de E0 |
+| Integridad | Archivos protegidos de E0 con los mismos SHA-256; evidencias de E0, E1 y E2 sin cambios entre `403115f` y `f4f79e7` |

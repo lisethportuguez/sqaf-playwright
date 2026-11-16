@@ -242,9 +242,9 @@ No hubo desafío anti-bot en ninguna ejecución local de E2.
 | 13 | CI ejecuta typecheck, unitarias, línea base e integración | Cumplido | §9 (runs `43755588344` y `43755950821`) |
 | 14 | Sin dependencias nuevas ni cambios de versión | Cumplido | §2.2 (`package-lock.json` sin cambios) |
 | 15 | Documentación y ADR actualizados | Cumplido | ADR-0007 (nuevo); ADR-0003, ADR-0004 y ADR-0005; `architecture.md`; README; este documento |
-| 16 | PR de E2 abierto con checks en verde | Cumplido para `801bf20` y `641ac9f` | §9: run `43755950821` en success sobre `641ac9f`, PR [#5](https://github.com/lisethportuguez/sqaf-playwright/pull/5) abierto, MERGEABLE/CLEAN y con su check en SUCCESS |
+| 16 | PR de E2 validado en CI y fusionado con autorización | Cumplido | §9: run `43755950821` en success sobre `641ac9f`. PR [#5](https://github.com/lisethportuguez/sqaf-playwright/pull/5) **MERGED** (commit de merge `403115f6f0dfa588604e9e456f5a635bfc3f533b`), CI posterior al merge `43760513829` en success, tag `v0.3.0` |
 
-Los criterios anteriores son técnicos. **El cierre y la aprobación de E2 corresponden a la responsable del TFG.** Hasta entonces, el PR permanece abierto y sin merge.
+Los criterios anteriores son técnicos. **El cierre de E2 fue aprobado por la responsable del TFG:** el PR #5 se fusionó en `main` (`403115f`) y la etapa se marcó con el tag anotado `v0.3.0`. *(Corrección documental posterior: esta sección decía que el PR seguía abierto; se actualizó en el PR documental de cierre de E3 y E5.)*
 
 ## 13. Advertencias de la plataforma de CI
 
