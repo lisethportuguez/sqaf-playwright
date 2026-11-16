@@ -1,0 +1,10 @@
+{
+  "description": "Subset of the SUT product catalog used by SQAF scenarios.",
+  "source": "GET https://automationexercise.com/api/productsList on 2026-11-15 (category = usertype > category).",
+  "items": [
+    { "id": 1, "name": "Blue Top", "price": 500, "brand": "Polo", "category": "Women > Tops" },
+    { "id": 2, "name": "Men Tshirt", "price": 400, "brand": "H&M", "category": "Men > Tshirts" },
+    { "id": 3, "name": "Sleeveless Dress", "price": 1000, "brand": "Madame", "category": "Women > Dress" },
+    { "id": 33, "name": "Soft Stretch Jeans", "price": 799, "brand": "Polo", "category": "Men > Jeans" }
+  ]
+}

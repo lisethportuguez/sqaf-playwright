@@ -1,0 +1,42 @@
+{
+  "description": "Reusable account profiles. E-mail and password are generated per test by the user factory, so no profile can collide with an existing account. All values are fictitious.",
+  "source": "Synthetic. Country values are options of the SUT registration form (observed 2026-11-15).",
+  "items": [
+    {
+      "id": "default",
+      "description": "Default profile (same address fields as the Stage 0 baseline user)",
+      "name": "SQAF Tester",
+      "title": "Mrs",
+      "birthDate": { "day": "10", "month": "5", "year": "1995" },
+      "newsletter": true,
+      "specialOffers": true,
+      "firstName": "Ana",
+      "lastName": "Tester",
+      "company": "SQAF",
+      "address": "Avenida Central 100",
+      "address2": "Edificio 2",
+      "country": "Canada",
+      "state": "Ontario",
+      "city": "Toronto",
+      "zipcode": "M5H 2N2",
+      "mobileNumber": "4165550100"
+    },
+    {
+      "id": "united-states-minimal",
+      "description": "Profile without optional fields (no company, no second address line, no subscriptions)",
+      "name": "SQAF Minimal",
+      "title": "Mr",
+      "birthDate": { "day": "1", "month": "12", "year": "1988" },
+      "newsletter": false,
+      "specialOffers": false,
+      "firstName": "Luis",
+      "lastName": "Minimal",
+      "address": "200 Example Street",
+      "country": "United States",
+      "state": "California",
+      "city": "San Francisco",
+      "zipcode": "94105",
+      "mobileNumber": "4155550100"
+    }
+  ]
+}

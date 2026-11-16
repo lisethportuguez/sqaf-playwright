@@ -1,0 +1,22 @@
+{
+  "description": "Search terms and the exact products each one must return (data-driven, TC9).",
+  "source": "GET https://automationexercise.com/api/productsList on 2026-11-15: the only products whose name contains the term.",
+  "items": [
+    {
+      "id": "jeans",
+      "description": "term shared by three men's jeans",
+      "term": "Jeans",
+      "expectedProducts": ["Soft Stretch Jeans", "Regular Fit Straight Jeans", "Grunt Blue Slim Fit Jeans"]
+    },
+    {
+      "id": "saree",
+      "description": "term shared by three women's sarees",
+      "term": "Saree",
+      "expectedProducts": [
+        "Cotton Silk Hand Block Print Saree",
+        "Rust Red Linen Saree",
+        "Beautiful Peacock Blue Cotton Linen Saree"
+      ]
+    }
+  ]
+}

@@ -33,3 +33,9 @@ export const BASELINE_TIMEOUTS: TimeoutPolicy = Object.freeze({
   action: 0,
   navigation: 0,
 });
+
+/**
+ * SQAF API requests (Stage 3, account client). Separate from TimeoutPolicy so
+ * the browser timeouts and the frozen baseline policy stay unchanged.
+ */
+export const SQAF_API_TIMEOUT = 15_000;

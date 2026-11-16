@@ -8,7 +8,8 @@ import { BASELINE_EVIDENCE, sqafEvidencePolicy, type EvidencePolicy } from './ev
 import { loadEnvFileIfPresent, resolveEnvironment, type ResolvedEnvironment } from './environment';
 import { ENVIRONMENTS } from './environments';
 import { SQAF_LOCATORS, type LocatorPolicy } from './locators';
-import { BASELINE_TIMEOUTS, SQAF_TIMEOUTS, type TimeoutPolicy } from './timeouts';
+import { SQAF_TEST_DATA, type TestDataPolicy } from './test-data';
+import { BASELINE_TIMEOUTS, SQAF_API_TIMEOUT, SQAF_TIMEOUTS, type TimeoutPolicy } from './timeouts';
 
 export interface BaselineConditions {
   /** Always the production SUT: SQAF_ENV and SQAF_BASE_URL never apply. */
@@ -31,6 +32,12 @@ export interface SqafConfig {
   readonly reporting: {
     readonly classificationOutputFile: string;
   };
+  /** SUT API used for test-data provisioning (Stage 3, ADR-0009). Never used by the baseline. */
+  readonly api: {
+    readonly timeout: number;
+  };
+  /** Location of the static datasets (Stage 3, ADR-0009). */
+  readonly testData: TestDataPolicy;
 }
 
 export function buildSqafConfig(environment: ResolvedEnvironment): SqafConfig {
@@ -50,6 +57,8 @@ export function buildSqafConfig(environment: ResolvedEnvironment): SqafConfig {
     reporting: Object.freeze({
       classificationOutputFile: 'reports/failure-classification.json',
     }),
+    api: Object.freeze({ timeout: SQAF_API_TIMEOUT }),
+    testData: SQAF_TEST_DATA,
   });
 }
 
@@ -60,4 +69,5 @@ export const sqafConfig: SqafConfig = buildSqafConfig(resolveEnvironment());
 export { ConfigurationError } from './environment';
 export type { EvidencePolicy } from './evidence';
 export type { LocatorPolicy } from './locators';
+export type { TestDataPolicy } from './test-data';
 export type { TimeoutPolicy } from './timeouts';

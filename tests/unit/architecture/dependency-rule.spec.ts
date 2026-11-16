@@ -28,7 +28,7 @@ test.describe('the repository', () => {
 
   test('analyzes every layer that exists today', () => {
     const layers = new Set([...sources.keys()].map(layerOf));
-    for (const layer of ['config', 'utils', 'errors', 'pages', 'fixtures', 'reporting', 'suites', 'unit', 'baseline']) {
+    for (const layer of ['config', 'utils', 'errors', 'pages', 'data', 'api', 'fixtures', 'reporting', 'suites', 'unit', 'baseline']) {
       expect(layers, layer).toContain(layer);
     }
   });

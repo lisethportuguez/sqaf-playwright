@@ -1,0 +1,15 @@
+{
+  "description": "Payment cards for the checkout scenarios (Stage 4). The SUT does not charge cards.",
+  "source": "Fictitious. 4111111111111111 is the standard public test number of card networks, not a real card.",
+  "items": [
+    {
+      "id": "test-visa",
+      "description": "standard test card",
+      "nameOnCard": "SQAF Tester",
+      "cardNumber": "4111111111111111",
+      "cvc": "123",
+      "expiryMonth": "12",
+      "expiryYear": "2030"
+    }
+  ]
+}
