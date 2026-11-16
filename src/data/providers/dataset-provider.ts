@@ -99,6 +99,7 @@ export const testData = Object.freeze({
   products: createDatasetProvider(DATASETS.products),
   productSearches: createDatasetProvider(DATASETS.productSearches),
   paymentCards: createDatasetProvider(DATASETS.paymentCards),
+  productCategories: createDatasetProvider(DATASETS.productCategories),
 });
 
 export type TestData = typeof testData;

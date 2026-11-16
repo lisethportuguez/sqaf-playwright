@@ -1,7 +1,8 @@
 import { expect, type Locator } from '@playwright/test';
 import { BasePage } from './base.page';
 import { CartModal } from './components/cart-modal.component';
-import { ProductCard } from './components/product-card.component';
+import type { ProductCard } from './components/product-card.component';
+import { ProductGrid } from './components/product-grid.component';
 
 /**
  * SQAF — "All Products" page (`/products`), including search results
@@ -18,6 +19,8 @@ export class ProductsPage extends BasePage {
 
   readonly allProductsHeading: Locator;
   readonly searchedProductsHeading: Locator;
+  /** The product grid (Stage 4: shared with the home and category pages). */
+  readonly productGrid: ProductGrid;
   readonly productCards: Locator;
   readonly searchInput: Locator;
   readonly searchButton: Locator;
@@ -27,22 +30,21 @@ export class ProductsPage extends BasePage {
     super(page);
     this.allProductsHeading = page.getByRole('heading', { name: 'All Products', exact: true });
     this.searchedProductsHeading = page.getByRole('heading', { name: 'Searched Products', exact: true });
-    this.productCards = page.locator('.features_items .product-image-wrapper');
+    this.productGrid = new ProductGrid(page.locator('.features_items'));
+    this.productCards = this.productGrid.cards;
     this.searchInput = page.getByPlaceholder('Search Product', { exact: true });
     this.searchButton = page.locator('#submit_search');
-    this.cartModal = new CartModal(page.locator('#cartModal'));
+    this.cartModal = CartModal.of(page);
   }
 
   /** Card at a zero-based position of the current grid. */
   productAt(position: number): ProductCard {
-    return new ProductCard(this.productCards.nth(position));
+    return this.productGrid.productAt(position);
   }
 
   /** Card whose visible product name is exactly `name`. */
   productNamed(name: string): ProductCard {
-    return new ProductCard(
-      this.productCards.filter({ has: this.page.locator('.productinfo').getByText(name, { exact: true }) }),
-    );
+    return this.productGrid.productNamed(name);
   }
 
   /** Searches and waits for the results page (the SUT reloads `/products?search=`). */

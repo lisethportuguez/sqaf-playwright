@@ -1,5 +1,6 @@
 import { expect, type Locator } from '@playwright/test';
 import { BasePage } from './base.page';
+import { CartModal } from './components/cart-modal.component';
 
 /**
  * SQAF — Product detail page (`/product_details/<id>`).
@@ -20,6 +21,10 @@ export class ProductDetailsPage extends BasePage {
   readonly availability: Locator;
   readonly condition: Locator;
   readonly brand: Locator;
+  /** Stage 4 (TC13): quantity spin button, "Add to cart" button and its modal. */
+  readonly quantityInput: Locator;
+  readonly addToCartButton: Locator;
+  readonly cartModal: CartModal;
 
   constructor(page: ProductDetailsPage['page']) {
     super(page);
@@ -30,6 +35,17 @@ export class ProductDetailsPage extends BasePage {
     this.availability = this.information.locator('p').filter({ hasText: 'Availability:' });
     this.condition = this.information.locator('p').filter({ hasText: 'Condition:' });
     this.brand = this.information.locator('p').filter({ hasText: 'Brand:' });
+    // <input type="number" id="quantity">: role spinbutton; its <label> has no "for", so no accessible name.
+    this.quantityInput = this.information.getByRole('spinbutton');
+    // The button text is preceded by an icon glyph: anchored pattern, as in the header.
+    this.addToCartButton = this.information.getByRole('button', { name: /^\W*Add to cart$/ });
+    this.cartModal = CartModal.of(page);
+  }
+
+  /** Sets the quantity and adds the product to the cart (jQuery-bound: the page must be ready). */
+  async addToCart(quantity = 1): Promise<void> {
+    await this.quantityInput.fill(String(quantity));
+    await this.addToCartButton.click();
   }
 
   async openProduct(productId: number): Promise<void> {
