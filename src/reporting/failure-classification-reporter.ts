@@ -13,6 +13,7 @@ import {
   pageSnapshotSection,
   type FailureClassification,
 } from '../errors/failure-classification';
+import { HTTP_EVIDENCE_ATTACHMENT, parseHttpEvidence } from '../errors/http-evidence';
 import { redactSecrets, redactTypedValues } from '../utils/redaction';
 import { stripAnsi } from '../utils/text';
 
@@ -75,7 +76,12 @@ export function redactExcerpt(message: string): string {
 const NOTE = 'Informational classification. Test statuses, retries and the exit code are not modified.';
 
 function readErrorContext(result: TestResult): string | undefined {
-  const attachment = result.attachments.find((item) => item.name === 'error-context');
+  return readAttachmentText(result, 'error-context');
+}
+
+/** Text of a named attachment (inline body or file), `undefined` if absent or unreadable. */
+function readAttachmentText(result: TestResult, name: string): string | undefined {
+  const attachment = result.attachments.find((item) => item.name === name);
   if (!attachment) return undefined;
   if (attachment.body) return attachment.body.toString('utf8');
   if (attachment.path && existsSync(attachment.path)) {
@@ -146,8 +152,11 @@ export default class FailureClassificationReporter implements Reporter {
     const messages = result.errors.map((error) => stripAnsi(error.message ?? error.value ?? ''));
     const errorContext = readErrorContext(result);
     const context = errorContext === undefined ? undefined : pageSnapshotSection(errorContext);
+    // Structured HTTP status of the last main-frame document (ADR-0008 D14), when the fixtures recorded it.
+    const http = parseHttpEvidence(readAttachmentText(result, HTTP_EVIDENCE_ATTACHMENT));
     const { classification, evidence } = classifyFailure({
       errorMessages: messages,
+      ...(http !== undefined ? { documentResponse: http.lastDocument } : {}),
       ...(context !== undefined ? { pageSnapshot: context } : {}),
     });
 

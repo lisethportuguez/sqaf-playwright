@@ -4,9 +4,11 @@ import {
   classifyFailure,
   DataValidationError,
   emptyClassificationCounts,
+  evidenceUrl,
   FAILURE_CLASSIFICATIONS,
   InfrastructureError,
   pageSnapshotSection,
+  parseHttpEvidence,
 } from '../../../src/errors';
 
 /**
@@ -317,5 +319,98 @@ test.describe('real Playwright 1.65 error-context attachments', () => {
 
   test('what the SUT RETURNED still counts: a received 502 title is infrastructure', () => {
     expect(classifyFailure({ errorMessages: [BAD_GATEWAY_TITLE] }).classification).toBe('infrastructure/sut-unavailable');
+  });
+});
+
+/*
+ * Stage 5 adjustment (ADR-0008 D14) — STRUCTURED HTTP evidence. CI run
+ * 43799046248: the SUT answered the login POST with HTTP 503 and a page that
+ * says "This website is under heavy load (queue full)", with no standard
+ * reason phrase; the text rules classified it assertion/mismatch.
+ */
+test.describe('structured HTTP evidence of the last main-frame document', () => {
+  const LOGIN_ERROR_NOT_VISIBLE = [
+    'Error: expect(locator).toBeVisible() failed',
+    '',
+    "Locator: getByText('Your email or password is incorrect!', { exact: true })",
+    'Expected: visible',
+    'Timeout: 5000ms',
+    'Error: element(s) not found',
+  ].join('\n');
+  const QUEUE_FULL_SNAPSHOT =
+    '```yaml\n- heading "This website is under heavy load (queue full)" [level=1]\n- paragraph: We\'re sorry, too many people are accessing this website at the same time.\n```';
+  const POST_503 = { method: 'POST', status: 503, statusText: 'Service Unavailable' } as const;
+
+  test('queue full: HTTP 503 → infrastructure/sut-unavailable, whatever the page says', () => {
+    expect(
+      classifyFailure({ errorMessages: [LOGIN_ERROR_NOT_VISIBLE], pageSnapshot: QUEUE_FULL_SNAPSHOT, documentResponse: POST_503 }),
+    ).toEqual({
+      classification: 'infrastructure/sut-unavailable',
+      evidence: ['main document (POST) answered HTTP 503 Service Unavailable'],
+    });
+  });
+
+  test('the same failure WITHOUT the status stays assertion/mismatch (the text alone does not decide)', () => {
+    expect(classifyFailure({ errorMessages: [LOGIN_ERROR_NOT_VISIBLE], pageSnapshot: QUEUE_FULL_SNAPSHOT }).classification).toBe(
+      'assertion/mismatch',
+    );
+  });
+
+  for (const status of [500, 502, 504, 520, 599]) {
+    test(`HTTP ${status} → infrastructure/sut-unavailable`, () => {
+      expect(classifyFailure({ errorMessages: [LOGIN_ERROR_NOT_VISIBLE], documentResponse: { status } }).classification).toBe(
+        'infrastructure/sut-unavailable',
+      );
+    });
+  }
+
+  for (const status of [200, 204, 301, 403, 404, 499]) {
+    test(`HTTP ${status} does not change the classification (no false positive)`, () => {
+      expect(classifyFailure({ errorMessages: [LOGIN_ERROR_NOT_VISIBLE], documentResponse: { status } }).classification).toBe(
+        'assertion/mismatch',
+      );
+    });
+  }
+
+  test('priorities are kept: anti-bot, SQAF marker and network win over a 5xx status', () => {
+    const challenge = classifyFailure({
+      errorMessages: ['Error: expect(page).toHaveTitle(expected) failed\n\nExpected: "Automation Exercise"\nReceived: "One moment, please..."'],
+      documentResponse: { status: 503 },
+    });
+    expect(challenge.classification).toBe('infrastructure/anti-bot-challenge');
+
+    const api = new ApiError({ operation: 'op', method: 'GET', endpoint: '/api/x', summary: 's' });
+    expect(classifyFailure({ errorMessages: [api.message], documentResponse: { status: 503 } }).classification).toBe(
+      'api/request-failed',
+    );
+
+    expect(
+      classifyFailure({ errorMessages: [NAVIGATION_NETWORK_ERROR], documentResponse: { status: 503 } }).classification,
+    ).toBe('infrastructure/network');
+  });
+
+  test('locator timeouts and assertions keep their class on a healthy page, and become an outage on a 5xx page', () => {
+    expect(classifyFailure({ errorMessages: [LOCATOR_ACTION_TIMEOUT], documentResponse: { status: 200 } }).classification).toBe(
+      'automation/locator-timeout',
+    );
+    expect(classifyFailure({ errorMessages: [LOCATOR_ACTION_TIMEOUT], documentResponse: { status: 503 } }).classification).toBe(
+      'infrastructure/sut-unavailable',
+    );
+    expect(classifyFailure({ errorMessages: [VALUE_ASSERTION], documentResponse: { status: 200 } }).classification).toBe(
+      'assertion/mismatch',
+    );
+  });
+
+  test('the attachment parser accepts only the documented shape and never throws', () => {
+    const valid = JSON.stringify({ schemaVersion: 1, lastDocument: { method: 'POST', url: 'https://x.test/login', status: 503, statusText: 'Service Unavailable' } });
+    expect(parseHttpEvidence(valid)?.lastDocument.status).toBe(503);
+    for (const invalid of [undefined, '', 'not json', '[]', '{"schemaVersion":2,"lastDocument":{}}', '{"schemaVersion":1,"lastDocument":{"method":"GET","url":"/","status":"503"}}']) {
+      expect(parseHttpEvidence(invalid)).toBeUndefined();
+    }
+  });
+
+  test('the recorded URL never keeps a query string or a fragment', () => {
+    expect(evidenceUrl('https://automationexercise.com/login?token=abc&password=x#frag')).toBe('https://automationexercise.com/login');
+    expect(evidenceUrl('not a url')).toBe('(unparseable URL)');
   });
 });

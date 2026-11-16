@@ -217,3 +217,41 @@ test.describe('errorExcerpt never contains typed values or generated passwords',
     expect(report.failures[0]!.status).toBe('failed');
   });
 });
+
+/* ADR-0008 D14: the reporter reads the structured HTTP evidence attached by the fixtures. */
+test.describe('structured HTTP evidence attachment', () => {
+  const fakeTest = {
+    titlePath: () => ['', 'integration', 'auth.spec.ts', 'login with invalid credentials shows the error message'],
+    parent: { project: () => ({ name: 'integration' }) },
+    location: { file: `${process.cwd()}/tests/integration/pages/auth.spec.ts`, line: 20, column: 1 },
+  } as unknown as TestCase;
+  const message = "Error: expect(locator).toBeVisible() failed\n\nLocator: getByText('Your email or password is incorrect!', { exact: true })";
+
+  function classify(testInfo: TestInfo, attachments: TestResult['attachments']): FailureClassificationReport {
+    const outputFile = testInfo.outputPath(`http-${attachments.length}-${Date.now()}.json`);
+    const reporter = new FailureClassificationReporter({ outputFile });
+    reporter.onBegin({ rootDir: process.cwd(), projects: [{ name: 'integration' }] } as unknown as FullConfig);
+    reporter.onTestEnd(fakeTest, { status: 'failed', retry: 0, errors: [{ message }], attachments } as unknown as TestResult);
+    const returned = reporter.onEnd({ status: 'failed' } as FullResult);
+    expect(returned).toBeUndefined(); // still an observer
+    return readJson<FailureClassificationReport>(outputFile);
+  }
+
+  test('an HTTP 503 main document makes the failure infrastructure/sut-unavailable', async ({}, testInfo) => {
+    const body = Buffer.from(
+      JSON.stringify({ schemaVersion: 1, lastDocument: { method: 'POST', url: 'https://automationexercise.com/login', status: 503, statusText: 'Service Unavailable' } }),
+    );
+    const report = classify(testInfo, [{ name: 'sqaf-http-evidence', contentType: 'application/json', body }]);
+    expect(report.failures[0]).toMatchObject({
+      status: 'failed',
+      classification: 'infrastructure/sut-unavailable',
+      evidence: ['main document (POST) answered HTTP 503 Service Unavailable'],
+    });
+  });
+
+  test('without the attachment, or with a malformed one, nothing changes', async ({}, testInfo) => {
+    expect(classify(testInfo, []).failures[0]!.classification).toBe('assertion/mismatch');
+    const broken = [{ name: 'sqaf-http-evidence', contentType: 'application/json', body: Buffer.from('{not json') }];
+    expect(classify(testInfo, broken).failures[0]!.classification).toBe('assertion/mismatch');
+  });
+});

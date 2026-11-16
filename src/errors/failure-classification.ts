@@ -12,6 +12,7 @@ import {
   UNCLASSIFIED,
   type FailureClassification,
 } from './classifications';
+import { isServerErrorStatus } from './http-evidence';
 
 /**
  * SQAF — Post-execution failure classification (Stage 1, full taxonomy in
@@ -29,8 +30,12 @@ import {
  *  3. infrastructure/network — Chromium `net::ERR_*` codes (except
  *     ERR_BLOCKED_BY_CLIENT, which is the SQAF ad-blocking policy) and
  *     Node.js socket errors.
- *  4. infrastructure/sut-unavailable — a 5xx error page of the SUT or of
- *     Cloudflare (status code next to its standard reason phrase), seen in
+ *  4. infrastructure/sut-unavailable —
+ *     a) STRUCTURED: the last main-frame document of the attempt was answered
+ *        with HTTP 5xx (`documentResponse`, recorded by the httpEvidence
+ *        fixture, ADR-0008 D14), whatever the page says; or
+ *     b) TEXT: a 5xx error page of the SUT or of Cloudflare (status code next
+ *        to its standard reason phrase), seen in
  *     the page snapshot or in what Playwright RECEIVED. The expectation
  *     written by the test (`Expected: …`, `Locator: …`, call log) is ignored:
  *     a test that expects the text "502 Bad Gateway" is not an outage.
@@ -55,6 +60,8 @@ export interface FailureText {
   readonly errorMessages: readonly string[];
   /** Text of the error-context attachment (accessibility snapshot), if any. */
   readonly pageSnapshot?: string;
+  /** HTTP status of the last main-frame document of the attempt, if recorded (sqaf-http-evidence). */
+  readonly documentResponse?: { readonly method?: string; readonly status: number; readonly statusText?: string };
 }
 
 const SQAF_MARKER = /\[SQAF:([a-z-]+\/[a-z-]+)\]/;
@@ -145,7 +152,15 @@ export function classifyFailure(
     if (socket !== undefined) return result(INFRASTRUCTURE_NETWORK, [`network error ${socket}`]);
   }
 
-  // 4. SUT unavailable (5xx error page in the received values or the page snapshot).
+  // 4a. SUT unavailable: the page the attempt ended on was served with HTTP 5xx.
+  const doc = failure.documentResponse;
+  if (doc !== undefined && isServerErrorStatus(doc.status)) {
+    const request = doc.method ? `${doc.method} ` : '';
+    const reason = doc.statusText ? ` ${doc.statusText}` : '';
+    return result(INFRASTRUCTURE_SUT_UNAVAILABLE, [`main document (${request.trim() || 'navigation'}) answered HTTP ${doc.status}${reason}`]);
+  }
+
+  // 4b. SUT unavailable (5xx error page in the received values or the page snapshot).
   const observed = failure.errorMessages.map((message) => normalizeText(observedText(stripAnsi(message))));
   for (const text of [...observed, rawSnapshot]) {
     const server = SERVER_ERROR.exec(text);

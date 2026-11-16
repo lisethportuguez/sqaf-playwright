@@ -31,6 +31,14 @@ export {
   type FailureText,
 } from './failure-classification';
 export {
+  evidenceUrl,
+  HTTP_EVIDENCE_ATTACHMENT,
+  isServerErrorStatus,
+  parseHttpEvidence,
+  type DocumentResponse,
+  type HttpEvidence,
+} from './http-evidence';
+export {
   InfrastructureError,
   type InfrastructureClassification,
   type InfrastructureErrorDetails,

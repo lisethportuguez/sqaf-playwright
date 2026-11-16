@@ -1,6 +1,7 @@
 import { mergeTests } from '@playwright/test';
 import { test as contextTest } from './context.fixture';
 import { test as dataTest } from './data.fixture';
+import { test as httpEvidenceTest } from './http-evidence.fixture';
 import { test as pagesTest } from './pages.fixture';
 
 /**
@@ -15,7 +16,7 @@ import { test as pagesTest } from './pages.fixture';
  * collection time, and the input data types. Page Object classes and the API
  * client stay internal and reach the tests through fixtures.
  */
-export const test = mergeTests(contextTest, pagesTest, dataTest);
+export const test = mergeTests(contextTest, httpEvidenceTest, pagesTest, dataTest);
 export { expect } from '@playwright/test';
 export type { AccountDetails, LoginCredentials, SignupIdentity } from '../pages';
 
