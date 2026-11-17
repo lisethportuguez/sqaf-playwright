@@ -41,8 +41,9 @@ test.describe('detectors', () => {
     ['user-path', String.raw`C:\Users\someone\repo\file.ts`],
     ['user-path', '/home/runner/work/repo/file.ts'],
   ];
-  for (const [detector, text] of cases) {
-    test(`${detector} is found in ${JSON.stringify(text).slice(0, 40)}`, () => {
+  // Titles never include the sample: they are printed in the CI log, which must hold no value shaped like sensitive data.
+  for (const [index, [detector, text]] of cases.entries()) {
+    test(`${detector} is found (sample ${index + 1})`, () => {
       expect(scanText(text, { host: HOST })).toContain(detector);
     });
   }
