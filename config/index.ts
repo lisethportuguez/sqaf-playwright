@@ -71,6 +71,7 @@ loadEnvFileIfPresent();
 export const sqafConfig: SqafConfig = buildSqafConfig(resolveEnvironment());
 
 export { ConfigurationError } from './environment';
+export { SQAF_ALLURE, type AllurePolicy } from './allure';
 export { CREDENTIAL_EVIDENCE, credentialEvidenceViolations, type EffectiveEvidence } from './credential-evidence';
 export type { EvidencePolicy } from './evidence';
 export type { LocatorPolicy } from './locators';
