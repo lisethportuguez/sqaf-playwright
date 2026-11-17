@@ -30,7 +30,12 @@ test.describe('when the functional scenarios run', () => {
     const positions = order.map((name) => STEP_NAMES.indexOf(name));
     for (const [index, position] of positions.entries()) expect(position, order[index]).toBeGreaterThan(-1);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
-    expect(STEP_NAMES.at(-1)).toBe('Upload e2e failure evidence (product suites)');
+    // Stage 6 (ADR-0011): the Allure report, its history and the fail-closed check follow (workflow-allure.spec.ts).
+    expect(STEP_NAMES.slice(STEP_NAMES.indexOf('Upload e2e failure evidence (product suites)') + 1)).toEqual([
+      'Upload Allure report',
+      'Upload Allure history',
+      'Check Allure pipeline',
+    ]);
   });
 
   test('only if every previous step passed (no if: on the run step)', () => {
@@ -104,7 +109,8 @@ test.describe('evidence and security (ADR-0009 D16, INC-2026-11-16)', () => {
   });
 
   test('least privilege: read-only token, no secrets, no write permission', () => {
-    expect(WORKFLOW).toMatch(/\npermissions:\n  contents: read\n\n/);
+    // Stage 6 (ADR-0011): actions: read, only to download the Allure history of earlier runs (workflow-allure.spec.ts).
+    expect(WORKFLOW).toMatch(/\npermissions:\n  contents: read\n  actions: read\n\n/);
     expect(WORKFLOW).not.toMatch(/secrets\.|write-all|: write\b|GITHUB_TOKEN/);
   });
 

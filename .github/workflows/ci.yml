@@ -42,9 +42,13 @@ on:
       - '.nvmrc'
   workflow_dispatch:
 
-# Least privilege: the workflow only needs to read the repository.
+# Least privilege: the workflow reads the repository and, since Stage 6
+# (ADR-0011), the artifacts of earlier runs of this workflow (actions: read)
+# to download the Allure history. It never writes to the repository, never
+# publishes GitHub Pages and never needs any other scope.
 permissions:
   contents: read
+  actions: read
 
 # One run at a time per branch or pull request, and a running one is NEVER
 # cancelled (Stage 4, E4.5): the authentication and checkout scenarios create
@@ -118,6 +122,26 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
+      # Stage 6 (ADR-0011): READ-ONLY download of the Allure history (trends)
+      # from the latest completed push run on main that published one. Pull
+      # requests read it too, but only push runs on main upload a new one
+      # (step "Upload Allure history"). The history is scanned again with the
+      # report before anything is published. Never fails the run: without a
+      # history the report simply has no trends yet.
+      - name: Download Allure history (read-only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p allure-history
+          for id in $(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch main --event push --status completed --limit 20 --json databaseId --jq '.[].databaseId'); do
+            if gh run download "$id" --repo "$GITHUB_REPOSITORY" --pattern 'allure-history-*' --dir allure-history-download > /dev/null 2>&1; then
+              found=$(find allure-history-download -name history.jsonl | head -n 1)
+              if [ -n "$found" ]; then cp "$found" allure-history/history.jsonl; echo "Allure history from run $id"; break; fi
+            fi
+          done
+          rm -rf allure-history-download
+          [ -f allure-history/history.jsonl ] || echo 'No Allure history yet: the report starts without trends.'
+
       # Stage 2 (ADR-0007): Page Objects and fixtures against the SUT, AFTER the
       # baseline so it can never influence the baseline run or its evidence.
       # Runs only if everything before it passed (fewer requests to the SUT).
@@ -131,7 +155,7 @@ jobs:
         id: integration
         run: |
           echo '## Integration (Page Objects and fixtures)' >> "$GITHUB_STEP_SUMMARY"
-          npm run test:integration -- --output=test-results-integration --reporter=list,./src/reporting/failure-classification-reporter.ts,./src/reporting/run-summary-reporter.ts
+          npm run test:integration -- --output=test-results-integration --reporter=list,./src/reporting/failure-classification-reporter.ts,./src/reporting/run-summary-reporter.ts,./src/reporting/allure-reporter.ts
 
       # Safe summary only (same reporter as the e2e step, uploaded BEFORE the
       # e2e step writes its own): outcome, attempts, durations and
@@ -166,6 +190,13 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
+      # Stage 6 (ADR-0011): the SQAF Allure reporter (last in the list, after
+      # the classification it reads) prepares SANITIZED results, scans them,
+      # generates the report and scans it with the history, fail-closed. Here
+      # it builds an integration-only report WITHOUT a history entry; the e2e
+      # step rebuilds it with both suites and appends the single entry of the
+      # run. Raw Allure results (allure-results/) never leave the runner.
+
       # Stage 4 (ADR-0010 D9, E4.5): the SQAF functional scenarios, AFTER the
       # integration tests and only if everything before passed.
       #  - pull_request: only @smoke (6 scenarios, 9 tests, 2 test accounts).
@@ -181,7 +212,7 @@ jobs:
         run: |
           if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then SELECTION='--grep=@smoke'; else SELECTION=''; fi
           echo "## Functional scenarios (SQAF e2e, ${SELECTION:-full suite})" >> "$GITHUB_STEP_SUMMARY"
-          npm run test:e2e -- $SELECTION --output=test-results-e2e --reporter=list,./src/reporting/failure-classification-reporter.ts,./src/reporting/run-summary-reporter.ts
+          npm run test:e2e -- $SELECTION --output=test-results-e2e --reporter=list,./src/reporting/failure-classification-reporter.ts,./src/reporting/run-summary-reporter.ts,./src/reporting/allure-reporter.ts
 
       # Safe summary only: outcome, attempts, durations and classification per
       # test; no error messages, step titles, e-mails, passwords or card data.
@@ -206,3 +237,38 @@ jobs:
           path: test-results-e2e/products-*/
           retention-days: 14
           if-no-files-found: ignore
+
+      # Stage 6 (ADR-0011): ONLY the scanned single-file HTML report. It exists
+      # only if the pipeline found nothing: on any finding it is deleted. The
+      # raw (allure-results/) and prepared (allure-results-safe/) results are
+      # never published.
+      - name: Upload Allure report
+        if: ${{ !cancelled() && steps.integration.outcome != 'skipped' && hashFiles('allure-report/awesome/index.html') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: allure-report/
+          retention-days: 14
+          if-no-files-found: error
+
+      # The history is written ONLY by push runs on main (pull requests and
+      # manual runs read it but never publish it), and only when the report
+      # passed the scan (the history is scanned with it).
+      - name: Upload Allure history
+        if: ${{ !cancelled() && steps.integration.outcome != 'skipped' && github.event_name == 'push' && github.ref == 'refs/heads/main' && hashFiles('allure-report/awesome/index.html') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-history-${{ github.run_id }}-${{ github.run_attempt }}
+          path: allure-history/history.jsonl
+          retention-days: 90
+          if-no-files-found: error
+
+      # Fail-closed: an unsafe or missing Allure report fails the run (after
+      # the summaries and allowed evidence were uploaded), so a leak is never
+      # silent. The status file holds detectors and file names, never values.
+      - name: Check Allure pipeline
+        if: ${{ !cancelled() && steps.integration.outcome != 'skipped' }}
+        run: |
+          test -f reports/allure-status.json || { echo '::error::The Allure pipeline did not run.'; exit 1; }
+          cat reports/allure-status.json
+          node -e "const s = require('./reports/allure-status.json'); if (!s.safe) { console.log('::error::Allure report blocked: ' + s.status); process.exit(1); }"

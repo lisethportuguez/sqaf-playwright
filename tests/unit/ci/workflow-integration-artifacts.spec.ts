@@ -98,13 +98,14 @@ test.describe('the integration run (E4.5 security closure)', () => {
   test('the CLI reporters replace the configured ones: no HTML and no raw JSON report', () => {
     const run = code(stepBlock(RUN));
     expect(run).toContain(
-      'npm run test:integration -- --output=test-results-integration --reporter=list,./src/reporting/failure-classification-reporter.ts,./src/reporting/run-summary-reporter.ts',
+      'npm run test:integration -- --output=test-results-integration --reporter=list,./src/reporting/failure-classification-reporter.ts,./src/reporting/run-summary-reporter.ts,./src/reporting/allure-reporter.ts',
     );
     expect(run).not.toMatch(/\bhtml\b|\bjson\b|PLAYWRIGHT_(HTML|JSON)_OUTPUT/);
     expect(run.indexOf('failure-classification-reporter.ts')).toBeLessThan(run.indexOf('run-summary-reporter.ts'));
     expect(ciIntegrationRun().args).toEqual([
       '--output=test-results-integration',
-      '--reporter=list,./src/reporting/failure-classification-reporter.ts,./src/reporting/run-summary-reporter.ts',
+      // Stage 6 (ADR-0011): the sanitized Allure reporter is last (it reads the classification); contracts in workflow-allure.spec.ts.
+      '--reporter=list,./src/reporting/failure-classification-reporter.ts,./src/reporting/run-summary-reporter.ts,./src/reporting/allure-reporter.ts',
     ]);
   });
 

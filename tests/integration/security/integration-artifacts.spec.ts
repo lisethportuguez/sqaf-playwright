@@ -243,6 +243,18 @@ function expand(root: string, files: readonly string[]): ArtifactText[] {
   return out;
 }
 
+/** Decoded data entries (`d("<path>","<base64>")`) of the single-file Allure report pages (ADR-0011). */
+function expandAllureData(root: string, files: readonly string[]): ArtifactText[] {
+  const out: ArtifactText[] = [];
+  for (const file of files.filter((f) => f.endsWith('.html'))) {
+    for (const match of readFileSync(join(root, file), 'utf8').matchAll(/d\("([^"]{1,512})","([A-Za-z0-9+/=]*)"\)/g)) {
+      if (/\.(png|jpe?g|webp|gif|woff2?|ttf)$/i.test(match[1]!)) continue;
+      out.push({ path: `${file}!${match[1]}`, text: Buffer.from(match[2]!, 'base64').toString('utf8') });
+    }
+  }
+  return out;
+}
+
 interface Finding {
   readonly path: string;
   readonly kind: string;
@@ -347,8 +359,17 @@ test('the integration run of CI publishes no e-mail, account id, password or car
     expect(evidence.some((f) => f.endsWith('/trace.zip'))).toBe(true);
     expect(evidence.some((f) => /\/test-failed-\d+\.png$/.test(f))).toBe(true);
     expect(evidence.some((f) => f.endsWith('/error-context.md'))).toBe(true);
-    // No HTML report or raw JSON report is generated; the classification report is not published.
-    expect(files.some((f) => /(^|\/)playwright-report|\.html$/.test(f))).toBe(false);
+    // No Playwright HTML report or raw JSON report is generated; the classification report is not published.
+    // Stage 6 (ADR-0011): the only HTML is the sanitized and scanned Allure report, published by its own step.
+    expect(files.some((f) => /(^|\/)playwright-report/.test(f))).toBe(false);
+    expect(files.filter((f) => f.endsWith('.html')).every((f) => f.startsWith('allure-report/')), files.join('\n')).toBe(true);
+    const allureReport = uploadPaths(stepBlock('Upload Allure report'));
+    expect(allureReport).toEqual(['allure-report/']);
+    const reportFiles = files.filter((file) => allureReport.some((pattern) => globMatches(pattern, file)));
+    expect(reportFiles).toContain('allure-report/awesome/index.html');
+    // Raw and prepared Allure results stay on the runner (no upload path matches them).
+    expect(files.some((f) => f.startsWith('allure-results/'))).toBe(true);
+    expect([...publishedFiles, ...reportFiles].some((f) => f.startsWith('allure-results'))).toBe(false);
     expect(files).toContain('reports/failure-classification.json');
     expect(publishedFiles).not.toContain('reports/failure-classification.json');
 
@@ -360,6 +381,13 @@ test('the integration run of CI publishes no e-mail, account id, password or car
     const scanned = [...expand(run.dir, publishedFiles), ...expand(run.dir, ['job-summary.md'])];
     expect(scanned.some((a) => a.path.includes('trace.zip!'))).toBe(true);
     expect(findSensitive(scanned, forbidden)).toEqual([]);
+    // The Allure report: its embedded data DECODED (any e-mail is a finding), and every page for the exact
+    // values (the page shells bundle Allure's application, whose licence headers hold library authors' addresses).
+    const allureData = expandAllureData(run.dir, reportFiles);
+    expect(allureData.length).toBeGreaterThan(0);
+    expect(allureData.some((a) => a.text.includes('products: a failing check whose evidence is published'))).toBe(true); // non-vacuous
+    expect(findSensitive(allureData, forbidden)).toEqual([]);
+    expect(findSensitive(expand(run.dir, reportFiles), forbidden, false)).toEqual([]);
     expect(readFileSync(join(run.dir, 'job-summary.md'), 'utf8')).toContain('### SQAF integration tests (integration; selection: all)');
 
     // The console (job log) shows no account e-mail, generated password or card number either.
@@ -373,7 +401,8 @@ test('the integration run of CI publishes no e-mail, account id, password or car
     expect(consoleFindings).toEqual([]);
 
     // Controls: outputs that are NOT published do contain the synthetic data (the scan detects it).
-    const unpublished = expand(run.dir, files.filter((f) => !publishedFiles.includes(f)));
+    // (The Allure report is published by its own step and was scanned above.)
+    const unpublished = expand(run.dir, files.filter((f) => !publishedFiles.includes(f) && !reportFiles.includes(f)));
     const leaks = findSensitive(unpublished, forbidden);
     const leaked = (kind: RegExp, folder: string): boolean =>
       leaks.some((l) => kind.test(l.kind) && l.path.startsWith(`test-results-integration/${folder}`));
