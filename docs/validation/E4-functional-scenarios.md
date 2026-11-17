@@ -643,4 +643,4 @@ Autorizado el 2026-11-16, durante la revisión previa a la publicación de E4. E
 
 - Cada `dataId` distinto (34 en total) se sustituyó por un seudónimo estable `cuenta-01`…`cuenta-34`, asignado por orden de aparición y compartido entre ambos archivos. No cambió ningún otro campo, conteo, duración ni resultado. `summary.json` sigue siendo JSON válido, y ningún fragmento del token de ejecución quedó en los archivos.
 - `tests/unit/security/versioned-account-ids.spec.ts` impide volver a versionar un `dataId` real o un e-mail SQAF fuera de `tests/`.
-- Única excepción: `docs/validation/E3-test-data-management.md`, publicado en v0.3.0 antes de D12. Es evidencia protegida de E3 y no se modifica; sus cuentas también se borraron y se verificaron.
+- Única excepción: `docs/validation/E3-test-data-management.md`, publicado en v0.3.0 antes de D12. Es evidencia protegida de E3 y no se modifica; sus cuentas también se borraron y se verificaron. **Actualización:** después del merge de E4 se seudonimizó con autorización expresa (E3 §11), y la prueba ya no tiene excepciones.

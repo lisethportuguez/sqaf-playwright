@@ -5,6 +5,7 @@
 - **Fecha:** 2026-11-15 (hora local, UTC-6)
 - **Decisiones:** [ADR-0009](../architecture/decisions/ADR-0009-test-data-management.md) (aceptado e implementado)
 - **Estado:** **Completada y cerrada.** PR [#6](https://github.com/lisethportuguez/sqaf-playwright/pull/6) fusionado en `main` (commit de merge `f4f79e7666d9111be641760bd7e8c49c2b80d189`), tag `v0.4.0`. CI del PR [`43800662549`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43800662549) y CI posterior al merge [`43802704575`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43802704575) en verde.
+- **Protección de datos (2026-11-16, después de E4):** los `dataId` reales de las cuentas de prueba y sus e-mails se sustituyeron por seudónimos estables (`cuenta-01`…`cuenta-06`; un e-mail aparece como `sqaf.<cuenta-NN>@example.com`). El `dataId` reconstruye el e-mail de la cuenta (`sqaf.<dataId>@example.com`), y ADR-0010 D12 prohíbe publicarlo. Las cuentas se habían borrado y verificado con la API 14. No cambia ningún resultado, conteo, fecha ni conclusión. Ver §11.
 
 ## 1. Alcance
 
@@ -88,7 +89,7 @@ Las pruebas nuevas son 7, en `tests/integration/data/`: 5 de DDT y 2 que crean c
   - el mensaje incluyó la operación, el endpoint y el e-mail, sin contraseña ni *call log*;
   - en el primer test, la red de seguridad de `newUserData` borró por API con resultado `not-found`;
   - en `testUser`, se ejecutó el intento de borrado posterior al fallo de creación.
-- **Verificación independiente:** `GET /api/getUserDetailByEmail` devolvió `responseCode 404` para los dos e-mails (`sqaf.user-mwiiuhub-279ca1d7-1@example.com` y `sqaf.user-mwiiuhsy-c82e160f-1@example.com`). **No quedaron cuentas.**
+- **Verificación independiente:** `GET /api/getUserDetailByEmail` devolvió `responseCode 404` para los dos e-mails (`sqaf.<cuenta-01>@example.com` y `sqaf.<cuenta-02>@example.com`). **No quedaron cuentas.**
 
 ### 5.2 Segunda ejecución: solo `account-api.spec.ts` (2 pruebas)
 
@@ -96,10 +97,10 @@ Las pruebas nuevas son 7, en `tests/integration/data/`: 5 de DDT y 2 que crean c
 
 | Test | Pasos | Registro `sqaf-account-cleanup` |
 |---|---|---|
-| El cliente crea, consulta y elimina una cuenta | API 11 → API 14 (nombre y e-mail coinciden) → API 12 (`deleted`) → API 14 (no existe) | `newUserData`, `user-mwiiwlw5-220c046e-1`, `deleteOutcome: not-found` (la red de seguridad encontró la cuenta ya borrada) |
-| `testUser` proporciona una cuenta que inicia sesión | Creada por API → login por la UI → `Logged in as SQAF Tester` | `testUser`, `user-mwiiwlwl-d10044f0-1`, `deleteOutcome: deleted`, `verifiedAbsent: true` |
+| El cliente crea, consulta y elimina una cuenta | API 11 → API 14 (nombre y e-mail coinciden) → API 12 (`deleted`) → API 14 (no existe) | `newUserData`, `cuenta-03`, `deleteOutcome: not-found` (la red de seguridad encontró la cuenta ya borrada) |
+| `testUser` proporciona una cuenta que inicia sesión | Creada por API → login por la UI → `Logged in as SQAF Tester` | `testUser`, `cuenta-04`, `deleteOutcome: deleted`, `verifiedAbsent: true` |
 
-- **Verificación independiente:** API 14 devolvió `responseCode 404` para `sqaf.user-mwiiwlw5-220c046e-1@example.com` y `sqaf.user-mwiiwlwl-d10044f0-1@example.com`.
+- **Verificación independiente:** API 14 devolvió `responseCode 404` para `sqaf.<cuenta-03>@example.com` y `sqaf.<cuenta-04>@example.com`.
 - **Contraseñas:** el informe JSON de la ejecución contiene **0** apariciones del prefijo de contraseña (`Sqaf#`).
 - **Elementos de E2 validados por primera vez contra el SUT:** `login()` con una cuenta real y `header.loggedInUser`.
 
@@ -215,8 +216,8 @@ Mutaciones (aplicadas sobre copias de seguridad y revertidas):
 
 | Fixture | `dataId` | Borrado | Verificación independiente (API 14) |
 |---|---|---|---|
-| `newUserData` | `user-mwinvb7j-1ad016cc-1` | `not-found` (el test ya la había borrado) | 404 |
-| `testUser` | `user-mwinvb7j-1ad016cc-2` | `deleted`, `verifiedAbsent: true` | 404 |
+| `newUserData` | `cuenta-05` | `not-found` (el test ya la había borrado) | 404 |
+| `testUser` | `cuenta-06` | `deleted`, `verifiedAbsent: true` | 404 |
 
 Escaneo de todos los artefactos de esa ejecución (consola, informe HTML con sus datos comprimidos, JSON de clasificación): **0** contraseñas generadas y **0** pasos `Fill` con contraseña; ningún `trace.zip` ni video.
 
@@ -244,3 +245,13 @@ Durante la revisión del CI del PR #6 se detectó que el informe HTML de la lín
 | CI del PR | [`43800662549`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43800662549): success. 257 unitarias, línea base 5/5, integración 31/31, sin reintentos |
 | CI posterior al merge | [`43802704575`](https://github.com/lisethportuguez/sqaf-playwright/actions/runs/43802704575) (push a `main`): success. 257 unitarias, línea base 5/5, integración 31/31, sin reintentos. Artefactos sin contraseñas y sin informe HTML de E0 |
 | Integridad | Archivos protegidos de E0 con los mismos SHA-256; evidencias de E0, E1 y E2 sin cambios entre `403115f` y `f4f79e7` |
+
+## 11. Seudonimización de identificadores de cuentas
+
+Corrección documental del 2026-11-16, posterior al merge de E4 (PR #8, `44b9b49`). Este registro se publicó en v0.4.0 con 6 `dataId` reales de cuentas sintéticas, 4 de ellos también como e-mail (`sqaf.<dataId>@example.com`), en §5.1, §5.2 y §9.4. La regla D12 de ADR-0010 prohíbe publicar identificadores de cuentas, porque el e-mail se reconstruye a partir del `dataId`.
+
+- Cada `dataId` distinto se sustituyó por un seudónimo estable (`cuenta-01`…`cuenta-06`), asignado por orden de aparición. Cada e-mail quedó como `sqaf.<cuenta-NN>@example.com`, con el mismo seudónimo que su `dataId`.
+- No cambió ningún resultado, conteo, fecha, comando, hash ni conclusión. Todas las cuentas se habían borrado y la API 14 confirmó que no existían.
+- `sqaf.audit-nonexistent-0@example.com` (§2) no se modifica: es una dirección de sondeo que nunca correspondió a una cuenta, y no contiene un `dataId`.
+- `tests/unit/security/versioned-account-ids.spec.ts` falla si un documento, métrica o dataset versionado fuera de `tests/`, este incluido, vuelve a contener un `dataId` real o un e-mail reconstruible.
+- El historial de Git conserva la versión anterior, porque no se reescribió.
