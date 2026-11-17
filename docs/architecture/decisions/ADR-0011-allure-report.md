@@ -162,7 +162,13 @@ El informe también se abre con doble clic en `allure-report/awesome/index.html`
 - `tests/integration/security/integration-artifacts.spec.ts`: el paso de integración del CI, ejecutado contra un SUT falso, genera ahora el informe Allure. Su contenido decodificado se escanea con los valores reales de las cuentas creadas.
 - Suite unitaria completa: 393 pruebas.
 
-**CI del PR:** se registra en el PR y en la memoria del TFG.
+**CI del PR (#10):**
+- **Run 44029175235:** correcto. Informe publicado y escaneado en local tras la descarga, con 0 hallazgos. El historial no se publicó (PR).
+- **Run 44029915954:** el pipeline **bloqueó** el informe y el run falló en «Check Allure pipeline», sin publicar ningún informe. Todas las pruebas habían pasado.
+  - **Causa:** un falso positivo de `card-number`. El id de un resultado de Allure (hash hexadecimal de 32 caracteres) contenía por azar 16 dígitos seguidos que pasan Luhn.
+  - **Corrección:** el detector ignora un candidato solo si todo el token alfanumérico es un identificador hexadecimal de 32 caracteres o más. Lo cubre una prueba de regresión con ese id.
+  - **Interpretación:** es la prueba en CI de que el *fail-closed* detiene la publicación.
+- El run final del PR se registra en el PR.
 
 ## Consecuencias
 

@@ -87,6 +87,26 @@ const TYPED_VALUE = /\b(?:Fill|Type|Press sequentially|Insert text) \\?"(?!\[RED
 const TEST_DATA_ANNOTATION = /sqaf-test-data/;
 const USER_PATH = /\b[A-Za-z]:[\\/]{1,2}Users[\\/]{1,2}(?!\[user\])[^\\/\s"']{1,64}|\/(?:home|Users)\/(?!\[user\])[A-Za-z0-9._-]{1,64}\//;
 const CARD_CANDIDATE = /(?<!\d)\d{15,19}(?!\d)/g;
+/**
+ * Hash identifiers (Allure test result ids, history ids: 32+ hex characters)
+ * can contain a run of 15–19 decimal digits that passes the Luhn check by
+ * chance (observed in CI run 44029915954). A candidate is ignored ONLY when the
+ * whole alphanumeric token around it is such a hex identifier; a card number
+ * alone, between separators or next to ordinary letters is still found.
+ */
+const HEX_IDENTIFIER = /^[0-9a-f]{32,}$/i;
+
+function hasCardNumber(text: string): boolean {
+  for (const match of text.matchAll(CARD_CANDIDATE)) {
+    if (!passesLuhn(match[0])) continue;
+    let start = match.index;
+    let end = start + match[0].length;
+    while (start > 0 && /[0-9A-Za-z]/.test(text[start - 1]!)) start -= 1;
+    while (end < text.length && /[0-9A-Za-z]/.test(text[end]!)) end += 1;
+    if (!HEX_IDENTIFIER.test(text.slice(start, end))) return true;
+  }
+  return false;
+}
 
 const TEXT_TYPES = new Set(['.html', '.htm', '.json', '.jsonl', '.js', '.mjs', '.css', '.txt', '.properties', '.svg', '.xml', '.csv', '.md']);
 /** Binary types of a generated report and of kept screenshots. They are not text-scanned (see ADR-0011, residual risks). */
@@ -137,7 +157,7 @@ export function scanText(text: string, options: ScanTextOptions = {}): LeakDetec
   }
   if (GENERATED_PASSWORD.test(text)) found.add('generated-password');
   if (SECRET_PAIR.test(text)) found.add('secret-pair');
-  if ((text.match(CARD_CANDIDATE) ?? []).some(passesLuhn)) found.add('card-number');
+  if (hasCardNumber(text)) found.add('card-number');
   if (DATA_ID.test(text)) found.add('data-id');
   if (ACCOUNT_ADDRESS.test(text)) found.add('account-address');
   if (TYPED_VALUE.test(text)) found.add('typed-value');

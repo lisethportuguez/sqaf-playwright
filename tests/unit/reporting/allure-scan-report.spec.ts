@@ -63,6 +63,16 @@ test.describe('detectors', () => {
   test('a 13-digit timestamp or a non-Luhn number is not a card', () => {
     expect(scanText('1794891292308 4111111111111112', { host: HOST })).toEqual([]);
   });
+
+  test('a Luhn-valid digit run inside a hash identifier is not a card; a card next to letters still is', () => {
+    // Allure test result id of CI run 44029915954: it contains a 16-digit Luhn-valid run by chance.
+    const id = '7f7d6a53a3885938165491544d5d5330';
+    expect(scanText(`"id":"${id}"`, { host: HOST })).toEqual([]);
+    expect(scanText(`data/test-results/${id}.json`, { host: HOST })).toEqual([]);
+    expect(scanText(`card${CARD}`, { host: HOST })).toEqual(['card-number']);
+    expect(scanText(`${CARD}abc`, { host: HOST })).toEqual(['card-number']); // short hex-looking tail: not an identifier
+    expect(scanText(`x${id.slice(0, 31)}${CARD}`, { host: HOST })).toEqual(['card-number']); // not all hex
+  });
 });
 
 test.describe('base64 embedded data (single-file report)', () => {
