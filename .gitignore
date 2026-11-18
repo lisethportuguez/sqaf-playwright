@@ -14,6 +14,13 @@ node_modules/
 /playwright/.auth/
 /reports/
 
+# Allure Report (Stage 6, ADR-0011): raw and safe results, report and history are generated, never versioned
+/allure-results/
+/allure-results-safe/
+/allure-results-safe.staging/
+/allure-report/
+/allure-history/
+
 # Environment variables and secrets
 .env
 .env.*

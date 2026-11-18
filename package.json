@@ -24,11 +24,17 @@
     "test:baseline": "playwright test --project=baseline",
     "test:integration": "playwright test --project=integration",
     "test:e2e": "playwright test --project=chromium",
-    "report": "playwright show-report"
+    "test:allure": "playwright test --project=integration --project=chromium --reporter=list,./src/reporting/failure-classification-reporter.ts,./src/reporting/run-summary-reporter.ts,./src/reporting/allure-reporter.ts",
+    "test:integration:allure": "playwright test --project=integration --reporter=list,./src/reporting/failure-classification-reporter.ts,./src/reporting/run-summary-reporter.ts,./src/reporting/allure-reporter.ts",
+    "test:e2e:allure": "playwright test --project=chromium --reporter=list,./src/reporting/failure-classification-reporter.ts,./src/reporting/run-summary-reporter.ts,./src/reporting/allure-reporter.ts",
+    "report": "playwright show-report",
+    "report:allure": "allure open allure-report --host 127.0.0.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",
     "@types/node": "^26.6.6",
+    "allure": "3.22.1",
+    "allure-playwright": "3.14.0",
     "typescript": "^7.0.2"
   }
 }

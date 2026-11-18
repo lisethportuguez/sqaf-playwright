@@ -125,6 +125,22 @@ El artifact `integration-report` (informe HTML de integración, publicado desde 
 
 Tras un fallo de las unitarias o de la línea base solo pueden ejecutarse "Upload baseline classification" y "Upload failure evidence", y ambos publican el mismo archivo. Lo fija y lo verifica en ejecución `tests/unit/ci/workflow-failure-evidence.spec.ts`.
 
+### Cambios de la Etapa 6 (informe Allure)
+
+Detalle y justificación en [ADR-0011](ADR-0011-allure-report.md) D12. Contratos en `tests/unit/ci/workflow-allure.spec.ts`.
+
+| Cambio | Paso | Motivo |
+|---|---|---|
+| Permiso `actions: read`, además de `contents: read` | `permissions` | Leer los artefactos de historial de ejecuciones anteriores; ningún permiso de escritura |
+| Descarga del historial en solo lectura (último *push* completado en `main`) | "Download Allure history (read-only)", después de la línea base y antes de Integration | Tendencias en PR y en `main` sin poder modificar el historial desde un PR |
+| Reporter Allure añadido al final de la lista | "Integration tests …" y "Functional scenarios (SQAF e2e)" | Informe saneado y escaneado; el de Integration no añade entrada de historial y el de E2E añade la de toda la ejecución |
+| Publicación del informe escaneado (14 días) | "Upload Allure report" | Solo `allure-report/`; si hubo un hallazgo, el informe se borró y no hay nada que publicar |
+| Publicación del historial (90 días), solo en *push* a `main` | "Upload Allure history" | Los PR y las ejecuciones manuales nunca escriben el historial |
+| Bloqueo visible | "Check Allure pipeline" (último paso) | Falla si el estado del pipeline no es seguro o si no existe |
+| Sin cambios | Línea base, typecheck, unitarias, resúmenes y evidencias de fallo | La línea base E0 no usa Allure (no es un reporter configurado) |
+
+Nunca se publican `allure-results/` ni `allure-results-safe/`, y no se usa GitHub Pages.
+
 ### Configuración necesaria en GitHub
 
 No se necesitan *secrets* ni *variables*. Solo hay que crear el repositorio público `sqaf-playwright` y hacer push.

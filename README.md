@@ -86,7 +86,7 @@ Current structure (Stages 0–3 and 5):
 │   ├── data/                  # Test Data Management: types, validation, datasets, providers, factories
 │   ├── api/                   # Account API client (create / find / delete)
 │   ├── errors/                # SqafError hierarchy, anti-bot guard, failure taxonomy
-│   ├── reporting/             # Failure classification reporter
+│   ├── reporting/             # Failure classification, safe run summary and sanitized Allure reporters
 │   └── utils/                 # Pure helpers: text, price, unique ids, durations, guards, anti-bot detector
 ├── test-data/                 # Static JSON datasets
 │   ├── users/                 # Account profiles, invalid credentials
@@ -201,6 +201,10 @@ Playwright traces store form bodies and typed values, so these tests run without
 | `npm run test:e2e` | Runs the SQAF functional scenarios (`tests/e2e`) on Chromium. Scenarios tagged `@account` create one synthetic account each and delete it; filter with `--grep @smoke` or `--grep-invert @account` |
 | `npm test` | Runs all Playwright projects (currently the unit tests, the baseline and the integration tests) |
 | `npm run report` | Opens the last HTML report |
+| `npm run test:allure` | Integration and functional scenarios in one run, with the failure classification, the safe summary and the sanitized Allure report (`allure-report/`): one report and one history entry |
+| `npm run test:e2e:allure` | Same as `test:e2e`, plus the classification, the safe summary and the Allure report (combined with the last prepared integration results; appends one history entry) |
+| `npm run test:integration:allure` | Same as `test:integration`, plus the sanitized Allure report (no history entry: integration only) |
+| `npm run report:allure` | Serves the Allure report on `127.0.0.1` only (or open `allure-report/awesome/index.html` directly) |
 
 ## Reporting
 
@@ -221,7 +225,21 @@ Every failed attempt is also classified by an observer reporter and written to t
 
 The classification never changes test statuses, retries or the exit code. See [ADR-0006](docs/architecture/decisions/ADR-0006-infrastructure-failure-classification.md) and [ADR-0008](docs/architecture/decisions/ADR-0008-error-handling-utilities.md).
 
-Multi-format reporting and a custom metrics reporter are planned for Stage 6.
+### Allure Report (Stage 6)
+
+`npm run test:allure` (or `test:e2e:allure` / `test:integration:allure`) also builds an [Allure 3](https://allurereport.org/) report: results grouped by suite, module (Authentication, Products, Checkout) and scenario, with each scenario's steps and durations, SQAF failure categories, allowed screenshots and a history of trends between runs (`allure-history/`). Allure is a view, not an official record: the classification JSON and the safe summary stay the reference, and Allure only reads the classification.
+
+The report is built fail-closed ([ADR-0011](docs/architecture/decisions/ADR-0011-allure-report.md)):
+
+- allure-playwright runs with `detail: false` (no `Fill "<value>"` action steps).
+- A SQAF preparation step sanitizes every text (e-mails, passwords, card numbers, account data ids, typed values, local paths, machine name) and drops all attachments except failure screenshots of the suites that use no accounts.
+- A scanner decodes the base64 data of the single-file report and checks the prepared results, the report and the history. Any finding deletes the report and restores the previous history.
+
+Raw results (`allure-results/`) never leave the machine or the runner and are never used to build the report. Allure is not a configured reporter, so the baseline and the other runs are unchanged. Only failure screenshots of the suites that use no accounts appear (the same suites whose failure evidence CI publishes); screenshots are images and cannot be scanned, so that allowlist is their only protection. History: one entry per complete run (an integration-only run does not append one).
+
+**In CI** (Stage 6, Phase 3), the integration and functional-scenario steps add the same reporter. CI publishes **only** the scanned single-file report as the `allure-report-<run>-<attempt>` artifact (14 days); the raw and prepared results are never published. The history is downloaded read-only from the latest push run on `main` and is published (`allure-history-<run>-<attempt>`, 90 days) only by push runs on `main`; pull requests read it but never write it. If the pipeline finds sensitive data, nothing is published and the run fails in "Check Allure pipeline". The workflow needs `actions: read` (to read earlier artifacts) besides `contents: read`; GitHub Pages is not used. How to run and read the reports: [user guide](docs/user-guide.md).
+
+A custom metrics reporter is planned for Stage 6.
 
 ## CI/CD
 
@@ -266,7 +284,8 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 | 4 | Test layer — 15 functional scenarios, tags, traceability | Implemented and validated locally on Chromium (15 scenarios, 18 tests); CI step implemented locally, not yet run on GitHub (E4.5); E4.4 measurement: 3 runs, 50/54 passed, 0 functional failures, 4 SUT HTTP 503 failures, 24 accounts all deleted and verified; traceability contract in place; not yet in CI ([summary](metrics/experiments/E4-sqaf/summary.json)) |
 | 5 | Error hierarchy (`SqafError`, `DataValidationError`, `ApiError`) and full failure taxonomy | Validated (local and CI); real failures observed: a local DNS failure and an HTTP 503 of the SUT in CI, now classified from structured HTTP evidence |
 | 5 | Common utilities (price, unique ids/e-mails, text, durations, guards, secret redaction) | Validated (unit tests, local and CI) |
-| 6 | Reporting and metrics (HTML, JSON, JUnit, MetricsReporter) | Planned |
+| 6 | Reporting and metrics: sanitized Allure report with history | Implemented ([ADR-0011](docs/architecture/decisions/ADR-0011-allure-report.md)); validated locally against the SUT (integration 40/40, e2e 18/18, report and history scanned clean) and in the CI of its pull request; history on `main` starts with the first push after the merge |
+| 6 | Reporting and metrics: MetricsReporter and remaining formats | Planned |
 | 7 | Experimental validation and results | Planned |
 
 ## Limitations
@@ -276,7 +295,8 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 - Only Chromium is used; the Firefox and WebKit projects are defined but out of the current scope.
 - The functional scenarios are not run in CI yet: the CI step (`@smoke` on pull requests, the full suite on `main`) is implemented locally but has not run on GitHub Actions. Since Stage 3, two integration tests create one synthetic account each through the API and delete it in the same run.
 - The baseline HTML report is not published in CI, so a baseline failure in CI is diagnosed from the console log, the job summary and the classification JSON; detailed diagnosis means reproducing it locally. If the baseline's `fill(password)` failed after locating its field, Playwright would print the typed value in the CI console log (see [INC-2026-11-16](docs/security/INC-2026-11-16-baseline-report-credentials.md)).
-- Error messages and logs redact e-mail addresses (a SQAF address keeps only its data id, so the CI console log of a failed account test can show that id); the published CI summaries drop the data id too. Since no HTML report is published in CI, integration and account-scenario failures are diagnosed from the console log, the safe summary and the job summary, or by reproducing them locally.
+- Error messages, logs and published summaries replace every e-mail address with `[e-mail redacted]`, without the account data id (Stage 4 final security closure), so a failed account test can only be traced to its account locally (the data id is in the `sqaf-account-cleanup` attachment and the `sqaf-test-data` annotation, which CI never publishes). Since Playwright's HTML report is not published in CI, integration and account-scenario failures are diagnosed from the console log, the safe summary, the job summary and the sanitized Allure report, or by reproducing them locally.
+- The Allure report shows failure screenshots only for the suites without accounts; the scanner cannot read images, so the suite allowlist is their only protection ([ADR-0011](docs/architecture/decisions/ADR-0011-allure-report.md)). Updating Allure requires reviewing the pinned static-resource hashes of the scanner (the scan fails until then).
 - Tests that handle account credentials run without trace or video (screenshots are kept on failure), so their failures are harder to diagnose than those of other tests. Suites must not assert on a password value: the failed step message would end up in the HTML report.
 - The SUT is served through Cloudflare and may answer CI runners with an anti-bot challenge page. Such failures are detected and classified as infrastructure failures, but they still fail the run: SQAF does not try to bypass the challenge.
 
@@ -292,6 +312,7 @@ Status legend: **Planned** (designed only) · **Implemented** (code exists and t
 - [Stage 4 validation records](docs/validation/E4-functional-scenarios.md)
 - [Stage 0 baseline evidence](metrics/experiments/E0-baseline/)
 - [Stage 4 measurement evidence](metrics/experiments/E4-sqaf/)
+- [User guide: running SQAF and reading its reports (Spanish)](docs/user-guide.md)
 
 ## Versioning
 

@@ -1,6 +1,6 @@
 # Arquitectura de SQAF
 
-> **Estado del documento:** Ciclo 1 (E5 + E3) cerrado: PR #6 fusionado en `main` (`f4f79e7`), tag `v0.4.0`. Describe la arquitectura **objetivo** (diseñada) y el estado **real** de la implementación. Están implementadas la configuración (E1), los Page Objects y las fixtures (E2), las utilidades comunes y el manejo de errores con la taxonomía completa (E5, ADR-0008) y la gestión de datos de prueba con aprovisionamiento de cuentas por API (E3, ADR-0009). Del reporting solo existe el reporter de clasificación de fallos.
+> **Estado del documento:** Ciclo 1 (E5 + E3) cerrado: PR #6 fusionado en `main` (`f4f79e7`), tag `v0.4.0`. Describe la arquitectura **objetivo** (diseñada) y el estado **real** de la implementación. Están implementadas la configuración (E1), los Page Objects y las fixtures (E2), las utilidades comunes y el manejo de errores con la taxonomía completa (E5, ADR-0008) y la gestión de datos de prueba con aprovisionamiento de cuentas por API (E3, ADR-0009). Del reporting existen el reporter de clasificación de fallos, el resumen seguro de ejecución y, solo en local, el informe Allure saneado (E6, [ADR-0011](decisions/ADR-0011-allure-report.md)).
 
 ## 1. Propósito
 
@@ -38,7 +38,7 @@ flowchart LR
 | Account API | Aprovisionamiento y limpieza de cuentas por la API del SUT | `src/api/` | **Implemented (E3)**: `AccountApiClient` (crear, consultar, eliminar) |
 | Common Utilities | Funciones auxiliares independientes del negocio | `src/utils/` | **Implemented (E1, E5)**: detector anti-bot, texto, precios, ids y e-mails únicos, duraciones, *type guards* (ADR-0008) |
 | Error Handling | Errores contextualizados y clasificación de fallos | `src/errors/` | **Implemented (E1, E5)**: `SqafError`, `InfrastructureError`, `DataValidationError`, `ApiError`, guard anti-bot y taxonomía de 8 clasificaciones (ADR-0006, ADR-0008) |
-| Reporting & Metrics | Reportes nativos, evidencias, historial, métricas | `src/reporting/`, `metrics/` | **Parcial (E1, E5)**: reporter de clasificación de fallos con la taxonomía completa. Resto Planned (E6) |
+| Reporting & Metrics | Reportes nativos, evidencias, historial, métricas | `src/reporting/`, `metrics/` | **Parcial (E1, E4, E5, E6)**: reporter de clasificación de fallos con la taxonomía completa, resumen seguro de ejecución e informe Allure saneado con historial, en local y en CI (E6, [ADR-0011](decisions/ADR-0011-allure-report.md)). Métricas: Planned |
 
 ## 4. Componentes existentes (Etapas 0, 1, 2, 3 y 5)
 
@@ -71,7 +71,14 @@ flowchart LR
     J --> M[npm run test:e2e<br/>PR: @smoke · main: suite completa · E4]
     M --> N[upload e2e-summary<br/>resumen seguro]
     M -. si falla .-> O[upload e2e-failure-evidence<br/>solo suites de producto]
+    H --> HD[download allure-history<br/>solo lectura · main push · E6]
+    HD --> J
+    M --> AR[upload allure-report<br/>solo HTML escaneado · 14 días]
+    M -. solo push a main .-> AH[upload allure-history<br/>90 días]
+    AR --> CK[check Allure pipeline<br/>falla si no es seguro]
 ```
+
+Desde E6 ([ADR-0011](decisions/ADR-0011-allure-report.md)): Integration y E2E añaden el reporter Allure saneado. Solo se publican el informe escaneado y, en *push* a `main`, el historial. Detalle en §4.11.
 
 Desde E4.5 (implementado en local, sin ejecución en GitHub): el paso E2E solo publica el resumen seguro de `run-summary-reporter.ts` y, si falla, las evidencias de las suites de producto. No genera informe HTML ni JSON crudo de e2e. Desde el cierre de seguridad de E4.5, el paso de integración tampoco: el informe HTML de integración (`integration-report`) mostraba los e-mails sintéticos de las cuentas en los títulos `Fill "…"` y deja de generarse; se publica su resumen seguro y, si falla, solo las evidencias de las suites que no usan cuentas, e-mails, contraseñas ni tarjetas (ADR-0003, ADR-0010 D12). La línea base solo publica su JSON de clasificación desde INC-2026-11-16.
 
@@ -275,6 +282,34 @@ flowchart LR
 
 **Credenciales y evidencias (ADR-0009 D16):** `accountApi`, `newUserData` y `testUser` dependen de `credentialGuard`. Las suites que las usan declaran `test.use(CREDENTIAL_SAFE_EVIDENCE)` (sin traza ni video; captura en fallo); con otra política, el guard falla antes de crear cuentas. Los Page Objects escriben las contraseñas con `fillSecret`, y tras el test el guard vacía los campos de contraseña y redacta los errores. El resto de pruebas conserva la política general de E1.
 
+### 4.11 Informe Allure (`src/reporting/allure-reporter.ts`, `src/reporting/allure/`, E6)
+
+Vista visual de los resultados, **no** un registro oficial: la clasificación (`reports/failure-classification.json`) y el resumen seguro (`reports/run-summary.json`) no cambian, y Allure solo **lee** la clasificación ([ADR-0011](decisions/ADR-0011-allure-report.md)). No es un reporter configurado: lo añaden `npm run test:e2e:allure` y `npm run test:integration:allure`, detrás del reporter de clasificación, así que la línea base y el resto de ejecuciones no cambian. La política (directorios y suites cuyas capturas se permiten) está en `config/allure.ts`, y la configuración de Allure 3 en `allurerc.mjs`.
+
+```mermaid
+flowchart LR
+    PW[allure-playwright<br/>detail: false] --> RAW[allure-results/<br/>crudo, solo local]
+    CLS[reports/failure-classification.json] -. lectura .-> PREP
+    RAW --> PREP[prepare-results.ts<br/>saneamiento y listas de permitidos]
+    PREP --> SCAN1{scan-report.ts}
+    SCAN1 -- limpio --> SAFE[allure-results-safe/]
+    SCAN1 -- hallazgo --> X1[no se escribe nada]
+    SAFE --> GEN[allure generate<br/>allurerc.mjs]
+    GEN --> SCAN2{scan-report.ts<br/>informe + historial}
+    SCAN2 -- limpio --> REP[allure-report/<br/>allure-history/]
+    SCAN2 -- hallazgo --> X2[informe borrado,<br/>historial restaurado]
+```
+
+- **Saneamiento:** todo texto pasa por la redacción de SQAF (valores tecleados, pares secretos, contraseñas generadas, e-mails, tarjetas), más `dataId`, rutas locales y nombre del equipo. Las anotaciones se descartan, salvo `sqaf-test-case` (enlace) y `sqaf-baseline-pair` (etiqueta); las etiquetas y los enlaces van por lista de permitidos.
+- **Adjuntos:** solo capturas de las suites cuyas evidencias de fallo ya publica CI (productos e integración sin cuentas). Nunca trazas, vídeos, contextos de error, salida de consola ni registros de limpieza de cuentas.
+- **Escáner *fail-closed*:** decodifica los datos base64 del informe de un solo archivo; los recursos estáticos de Allure solo se excluyen por huella SHA-256 fijada o por dirección de licencia exacta.
+- **Agrupación:** `E2E (chromium)` → `Authentication` / `Products` / `Checkout` → `TCn: …` (los casos dirigidos por datos, con el parámetro `Case`); `Integration` → área → archivo. Las categorías son las de la taxonomía SQAF.
+- **Historial:** `allure-history/history.jsonl`, una entrada por informe; el panel `dashboard` muestra las tendencias. Todo lo generado está en `.gitignore`.
+- **Verificación:** `tests/unit/reporting/allure-*.spec.ts` (50 pruebas), incluida una ejecución hija con `allure-playwright` y `allure generate` reales sobre muestras sintéticas, sin navegador ni SUT.
+- **Historial:** una entrada por ejecución completa. Una ejecución solo de Integration no añade entrada; la que incluye E2E añade la de toda la ejecución. `npm run test:allure` ejecuta las dos suites en una sola invocación.
+- **CI (Fase 3):** los pasos de Integration y E2E añaden el mismo reporter. Antes de Integration se descarga, en solo lectura, el historial del último *push* a `main` (permiso `actions: read`). Solo se publica `allure-report/` (14 días); el historial (90 días) solo lo publican los *push* a `main`. «Check Allure pipeline» hace fallar el run si el informe no es seguro. Nunca se publican `allure-results/` ni `allure-results-safe/`, y no se usa GitHub Pages.
+- **Guía de uso:** [user-guide.md](../user-guide.md).
+
 ## 5. Flujo de ejecución actual
 
 ### 5.1 Línea base
@@ -324,7 +359,7 @@ El marco metodológico del TFG define un árbol de referencia plano. El reposito
 | `fixtures/` | `src/fixtures/` | E2, E3 | Implemented |
 | `utils/` | `src/utils/` (utilidades) y `src/errors/` (manejo de errores) | E1, E5 | Implemented |
 | `config/` | `config/` | E1 | Validated |
-| `reports/` | `reports/` (clasificación de fallos), `playwright-report/`, `src/reporting/` | E1, E6 | Parcial |
+| `reports/` | `reports/` (clasificación de fallos y resumen seguro), `playwright-report/`, `allure-report/` (informe Allure saneado, local), `src/reporting/` | E1, E4, E6 | Parcial |
 | `test-results/` | `test-results/` (evidencias de Playwright) | E0 | Generado, no versionado |
 | `playwright.config.ts`, `package.json`, `tsconfig.json`, `.gitignore`, `README.md` | Los mismos archivos en la raíz | E0 | Validated |
 | — (línea base del experimento) | `baseline/` | E0 | Validated, congelada |
