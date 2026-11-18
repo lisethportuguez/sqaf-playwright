@@ -1,6 +1,6 @@
 # Arquitectura de SQAF
 
-> **Estado del documento:** Ciclo 1 (E5 + E3) cerrado: PR #6 fusionado en `main` (`f4f79e7`), tag `v0.4.0`. Describe la arquitectura **objetivo** (diseñada) y el estado **real** de la implementación. Están implementadas la configuración (E1), los Page Objects y las fixtures (E2), las utilidades comunes y el manejo de errores con la taxonomía completa (E5, ADR-0008) y la gestión de datos de prueba con aprovisionamiento de cuentas por API (E3, ADR-0009). Del reporting existen el reporter de clasificación de fallos, el resumen seguro de ejecución y, solo en local, el informe Allure saneado (E6, [ADR-0011](decisions/ADR-0011-allure-report.md)).
+> **Estado del documento:** Ciclo 1 (E5 + E3) cerrado: PR #6 fusionado en `main` (`f4f79e7`), tag `v0.4.0`. Describe la arquitectura **objetivo** (diseñada) y el estado **real** de la implementación. Están implementadas la configuración (E1), los Page Objects y las fixtures (E2), las utilidades comunes y el manejo de errores con la taxonomía completa (E5, ADR-0008) y la gestión de datos de prueba con aprovisionamiento de cuentas por API (E3, ADR-0009). Del reporting existen el reporter de clasificación de fallos, el resumen seguro de ejecución y el informe Allure saneado, en local y en CI (E6, [ADR-0011](decisions/ADR-0011-allure-report.md)). La integración de Allure (E6) está cerrada: PR #10 fusionado en `main` (`72ea7f4`) y validado en CI ([registro](../validation/E6-allure-report.md)).
 
 ## 1. Propósito
 

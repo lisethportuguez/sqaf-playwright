@@ -4,7 +4,7 @@
   - **Fase 1** (2026-11-16): prototipo local con `tests/e2e/products`.
   - **Fase 2** (2026-11-16): integración en el repositorio, validada con muestras sintéticas.
   - **Fases 3 y 4** (2026-11-17): GitHub Actions y documentación, en la rama `stage/6-allure-report` y su PR. Validadas en local contra el SUT y en el CI del PR.
-  - **Pendiente:** el historial en `main` empieza con el primer *push* a `main` tras la fusión.
+  - **Cierre** (2026-11-18): PR #10 fusionado en `main` (merge commit `72ea7f4`) y validado en el CI de `main` (run 44215539394, intento 2), con la primera publicación del historial. Registro: [E6-allure-report.md](../../validation/E6-allure-report.md).
 - **Fecha:** 2026-11-17
 - **Etapa:** E6 (reporting y métricas)
 - **Relacionado:**
@@ -168,7 +168,12 @@ El informe también se abre con doble clic en `allure-report/awesome/index.html`
   - **Causa:** un falso positivo de `card-number`. El id de un resultado de Allure (hash hexadecimal de 32 caracteres) contenía por azar 16 dígitos seguidos que pasan Luhn.
   - **Corrección:** el detector ignora un candidato solo si todo el token alfanumérico es un identificador hexadecimal de 32 caracteres o más. Lo cubre una prueba de regresión con ese id.
   - **Interpretación:** es la prueba en CI de que el *fail-closed* detiene la publicación.
-- El run final del PR se registra en el PR.
+- **Run 44030723851 (final, `e9b859c`):** correcto. Unitarias 394, línea base 5, Integration 40, E2E `@smoke` 9; informe publicado y escaneado con 0 hallazgos.
+
+**CI de `main` tras la fusión (run 44215539394):**
+- **Intento 1:** la línea base falló 5/5 por el desafío anti-bot de Cloudflare (`infrastructure/anti-bot-challenge`), un problema de infraestructura. Allure no llegó a ejecutarse.
+- **Intento 2:** correcto. Unitarias 394, línea base 5, Integration 40, E2E completa 18; 58/58 resultados en Allure, 0 inestables y 0 reintentos. Se publicaron el informe y el primer historial (`allure-history-44215539394-2`, 1 entrada), ambos escaneados con 0 hallazgos.
+- Detalle y evidencia: [E6-allure-report.md](../../validation/E6-allure-report.md).
 
 ## Consecuencias
 
